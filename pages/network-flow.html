@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Network Flow Algorithms</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <script src="../js/common.js"></script>
+</head>
+<body>
+    <div class="container" id="app">
+        <script>
+            const navBar = createNavBar('Network Flow');
+            document.getElementById('app').appendChild(navBar);
+            const breadcrumbs = createBreadcrumbs([
+                { name: 'Home', url: '../index.html' },
+                { name: 'Network Flow Algorithms' }
+            ]);
+            document.getElementById('app').appendChild(breadcrumbs);
+        </script>
+        <div class="header">
+            <h1>🌊 Network Flow Algorithms</h1>
+            <p>Visualize Ford-Fulkerson and Edmonds-Karp algorithms for network flow problems.</p>
+        </div>
+                <div class="content-wrapper">
+            <div class="controls">
+                <h2>Controls</h2>
+                <div class="control-group">
+                    <label for="nf-graph-type">Graph Type:</label>
+                    <select id="nf-graph-type" disabled>
+                        <option value="directed_capacitated">Directed Capacitated</option>
+                    </select>
+                    <small>(Network flow typically uses directed graphs with capacities)</small>
+                </div>
+                <div class="control-group">
+                    <button id="nf-generate-random-graph">Generate Random Graph</button>
+                    <button id="nf-clear-graph">Clear Graph</button>
+                </div>
+                <div class="control-group">
+                    <input type="text" id="nf-add-node-value" placeholder="Node (e.g., S)">
+                    <button id="nf-add-node">Add Node</button>
+                </div>
+                <div class="control-group">
+                    <input type="text" id="nf-edge-from" placeholder="From Node">
+                    <input type="text" id="nf-edge-to" placeholder="To Node">
+                    <input type="number" id="nf-edge-capacity" placeholder="Capacity" value="1" min="0" style="width:100px;">
+                    <button id="nf-add-edge">Add Edge</button>
+                </div>
+                <hr>
+                <div class="control-group">
+                    <label for="nf-source-node">Source Node:</label>
+                    <input type="text" id="nf-source-node" placeholder="Enter source">
+                    <label for="nf-sink-node">Sink Node:</label>
+                    <input type="text" id="nf-sink-node" placeholder="Enter sink">
+                </div>
+                <div class="control-group">
+                    <button id="run-edmonds-karp">Run Edmonds-Karp</button>
+                    <!-- <button id="run-dinic">Run Dinic's (Future)</button> -->
+                </div>
+                <div class="animation-controls">
+                    <button id="play-pause-animation">Play</button>
+                    <button id="step-animation">Step</button>
+                    <label for="animation-speed">Speed:</label>
+                    <input type="range" id="animation-speed" min="1" max="10" value="5">
+                </div>
+            </div>
+
+            <div class="visualization-area-container">
+                <h2>Network Flow Visualization</h2>
+                <div id="nf-graph-visualization-area" class="visualization-area graph-viz"></div>
+                <div id="nf-output-area">
+                    <h3>Maximum Flow Result:</h3>
+                    <p id="nf-max-flow-display">Max Flow: N/A</p>
+                    <h3>Flow Details:</h3>
+                    <ul id="nf-flow-details-list"></ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="panels">
+            <div class="info-panel operations-log">
+                <h3>Operations Log</h3>
+                <ul id="operations-list"></ul>
+            </div>
+
+            <div class="info-panel code-snippet">
+                <h3>Code Snippet</h3>
+                <select id="code-snippet-selector">
+                    <option value="edmonds_karp">Edmonds-Karp Algorithm</option>
+                    <!-- <option value="dinics">Dinic's Algorithm</option> -->
+                </select>
+                <pre><code id="code-display" class="language-javascript">// Select an algorithm to see code</code></pre>
+            </div>
+        </div>
+
+        <div class="panels">
+            <div class="info-panel complexity-panel">
+                <script>
+                    const networkFlowComplexity = {
+                        edmonds_karp: { algorithm: "Edmonds-Karp (BFS for augmenting paths)", time_worst: 'O(V * E^2)', space_worst: 'O(V + E)'},
+                        // dinics: { algorithm: "Dinic's Algorithm", time_worst: 'O(V^2 * E) or O(V * E^2) or O(min(V^(2/3), E^(1/2)) * E) for unit capacity', space_worst: 'O(V + E)'}
+                    };
+                    document.currentScript.parentElement.appendChild(createComplexityPanel(networkFlowComplexity, 'Network Flow Algorithms'));
+                </script>
+            </div>
+
+            <div class="info-panel applications-panel">
+                <h3>Applications</h3>
+                <ul>
+                    <li>Airline scheduling.</li>
+                    <li>Image segmentation (min-cut max-flow theorem).</li>
+                    <li>Bipartite matching.</li>
+                    <li>Circulation problems.</li>
+                    <li>Data mining.</li>
+                    <li>Distributed computing.</li>
+                </ul>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const animationController = new AnimationController(
+                    document.getElementById('play-pause-animation'),
+                    document.getElementById('step-animation'),
+                    document.getElementById('animation-speed')
+                );
+                const operationsLog = document.getElementById('operations-list');
+                function logOperation(message) {
+                    const li = document.createElement('li');
+                    li.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                    operationsLog.insertBefore(li, operationsLog.firstChild);
+                    if (operationsLog.children.length > 20) { operationsLog.removeChild(operationsLog.lastChild); }
+                }
+
+                const codeSnippets = {
+                    edmonds_karp: 
+`function edmondsKarp(graph, s, t) {\n  let flow = 0;\n  // graph[u][v] is capacity from u to v\n  // residualGraph[u][v] stores remaining capacity\n  const residualGraph = {}; \n  for (const u in graph) {\n    residualGraph[u] = { ...graph[u] };\n    for (const v in graph[u]) {\n        residualGraph[v] = residualGraph[v] || {};\n        residualGraph[v][u] = residualGraph[v][u] || 0; // Ensure back-edges exist for residual graph
+    }\n  }\n\n  while (true) {\n    // Find augmenting path using BFS on residual graph\n    const parent = {};\n    const queue = [[s, Infinity]]; // [node, pathFlow]\n    parent[s] = {node: s, edgeFlow: Infinity}; // Mark source as visited
+    let pathFlow = 0;\n    let cur;\n\n    BFS_LOOP: // Label for breaking out of nested loops
+    while (queue.length > 0) {\n      [cur, pathFlow] = queue.shift();\n      for (const neighbor in residualGraph[cur]) {\n        if (!(neighbor in parent) && residualGraph[cur][neighbor] > 0) {\n          parent[neighbor] = {node: cur, edgeFlow: residualGraph[cur][neighbor]};\n          const newPathFlow = Math.min(pathFlow, residualGraph[cur][neighbor]);\n          if (neighbor === t) {\n            pathFlow = newPathFlow;\n            break BFS_LOOP; // Found path to sink\n          }\n          queue.push([neighbor, newPathFlow]);\n        }\n      }\n    }\n    if (!(t in parent) || parent[t].node === t) { // No path to sink found
+      break; // No more augmenting paths
+    }\n
+    // Augment flow along the path\n    flow += pathFlow;\n    let v = t;\n    while (v !== s) {\n      const u = parent[v].node;\n      residualGraph[u][v] -= pathFlow;\n      residualGraph[v][u] = (residualGraph[v][u] || 0) + pathFlow;\n      v = u;\n    }\n  }\n  return flow;\n}`
+                };
+                const codeSelector = document.getElementById('code-snippet-selector');
+                const codeDisplay = document.getElementById('code-display');
+                codeSelector.addEventListener('change', (event) => {
+                    codeDisplay.textContent = codeSnippets[event.target.value];
+                    if (typeof hljs !== 'undefined') { hljs.highlightElement(codeDisplay); }
+                });
+                codeDisplay.textContent = codeSnippets[codeSelector.value];
+                if (typeof hljs !== 'undefined') { hljs.highlightElement(codeDisplay); }
+
+                logOperation('Network Flow page loaded. Ready for operations.');
+                                const nfGraphVizArea = document.getElementById('nf-graph-visualization-area');
+                const nfMaxFlowDisplay = document.getElementById('nf-max-flow-display');
+                const nfFlowDetailsList = document.getElementById('nf-flow-details-list');
+
+                const nfAddNodeInput = document.getElementById('nf-add-node-value');
+                const nfEdgeFromInput = document.getElementById('nf-edge-from');
+                const nfEdgeToInput = document.getElementById('nf-edge-to');
+                const nfEdgeCapacityInput = document.getElementById('nf-edge-capacity');
+                const nfSourceNodeInput = document.getElementById('nf-source-node');
+                const nfSinkNodeInput = document.getElementById('nf-sink-node');
+
+                class NetworkFlowVisualization {
+                    constructor() {
+                        this.nodeMap = new Map(); // {id: {id, x, y, domElement}}
+                        this.edgeMap = new Map(); // {edgeId: {from, to, capacity, flow, domElement, capacityElement}}
+                        this.adj = {}; // {nodeId: {neighbor: {capacity, flow, reverseEdgeId}}}
+                        this.nodeRadius = 20;
+                        this.draggingNode = null;
+                        this.offsetX = 0;
+                        this.offsetY = 0;
+
+                        nfGraphVizArea.addEventListener('mousedown', this.handleMouseDown.bind(this));
+                        nfGraphVizArea.addEventListener('mousemove', this.handleMouseMove.bind(this));
+                        nfGraphVizArea.addEventListener('mouseup', this.handleMouseUp.bind(this));
+                        nfGraphVizArea.addEventListener('mouseleave', this.handleMouseUp.bind(this));
+                    }
+
+                    addNode(id, x, y) {
+                        if (this.nodeMap.has(id)) {
+                            logOperation(`Node ${id} already exists.`); return;
+                        }
+                        const nodeElement = document.createElement('div');
+                        nodeElement.className = 'graph-node';
+                        nodeElement.textContent = id;
+                        nodeElement.dataset.id = id;
+
+                        const vizWidth = nfGraphVizArea.clientWidth;
+                        const vizHeight = nfGraphVizArea.clientHeight;
+                        const posX = x || Math.random() * (vizWidth - 80) + 40;
+                        const posY = y || Math.random() * (vizHeight - 80) + 40;
+
+                        nodeElement.style.left = `${posX - this.nodeRadius}px`;
+                        nodeElement.style.top = `${posY - this.nodeRadius}px`;
+
+                        this.nodeMap.set(id, { id, x: posX, y: posY, domElement: nodeElement });
+                        this.adj[id] = this.adj[id] || {};
+                        nfGraphVizArea.appendChild(nodeElement);
+                        logOperation(`Node ${id} added.`);
+                    }
+
+                    addEdge(fromId, toId, capacity) {
+                        if (!this.nodeMap.has(fromId) || !this.nodeMap.has(toId)) {
+                            logOperation(`Error: Nodes ${fromId} or ${toId} not found.`); return;
+                        }
+                        if (capacity === null || isNaN(capacity) || capacity < 0) {
+                            logOperation(`Error: Edge capacity must be a non-negative number.`); return;
+                        }
+                        capacity = parseInt(capacity);
+
+                        const edgeId = `${fromId}-${toId}`;
+                        if (this.edgeMap.has(edgeId)) {
+                            logOperation(`Edge from ${fromId} to ${toId} already exists.`); return;
+                        }
+
+                        this.adj[fromId] = this.adj[fromId] || {};
+                        this.adj[toId] = this.adj[toId] || {}; // Ensure 'to' node exists in adj for reverse edges
+                        
+                        this.adj[fromId][toId] = { capacity, flow: 0 };
+                        // Ensure reverse edge structure exists for residual graph, initially 0 capacity if not explicit
+                        if (!this.adj[toId][fromId]) {
+                             this.adj[toId][fromId] = { capacity: 0, flow: 0 }; // Typically, reverse capacity is 0 unless it's a two-way street
+                        }
+
+                        this.renderEdge(fromId, toId, capacity, 0);
+                        logOperation(`Edge ${fromId} → ${toId} (Capacity: ${capacity}) added.`);
+                    }
+
+                    renderEdge(fromId, toId, capacity, flow) {
+                        const fromNode = this.nodeMap.get(fromId);
+                        const toNode = this.nodeMap.get(toId);
+                        if (!fromNode || !toNode) return;
+
+                        const edgeId = `${fromId}-${toId}`;
+                        let edgeData = this.edgeMap.get(edgeId);
+
+                        if (!edgeData) {
+                            const edgeElement = document.createElement('div');
+                            edgeElement.className = 'graph-edge directed'; // Network flow edges are directed
+                            nfGraphVizArea.appendChild(edgeElement);
+
+                            const capacityElement = document.createElement('div');
+                            capacityElement.className = 'edge-capacity'; // New CSS class needed
+                            nfGraphVizArea.appendChild(capacityElement);
+                            
+                            edgeData = { from: fromId, to: toId, capacity, flow, domElement: edgeElement, capacityElement };
+                            this.edgeMap.set(edgeId, edgeData);
+                        }
+                        
+                        edgeData.capacity = capacity;
+                        edgeData.flow = flow;
+                        edgeData.capacityElement.textContent = `${flow}/${capacity}`;
+
+                        this.updateEdgeElementStyle(edgeData.domElement, fromNode, toNode);
+                        this.updateCapacityElementPosition(edgeData.capacityElement, fromNode, toNode);
+                    }
+
+                    updateEdgeElementStyle(edgeElement, fromNode, toNode) {
+                        const dx = toNode.x - fromNode.x;
+                        const dy = toNode.y - fromNode.y;
+                        const length = Math.sqrt(dx * dx + dy * dy);
+                        const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+                        edgeElement.style.width = `${length}px`;
+                        edgeElement.style.left = `${fromNode.x}px`;
+                        edgeElement.style.top = `${fromNode.y - edgeElement.offsetHeight / 2}px`;
+                        edgeElement.style.transform = `rotate(${angle}deg)`;
+                    }
+
+                    updateCapacityElementPosition(capElement, fromNode, toNode) {
+                        if (!capElement) return;
+                        capElement.style.left = `${(fromNode.x + toNode.x) / 2 - 10}px`; // Adjust for text width
+                        capElement.style.top = `${(fromNode.y + toNode.y) / 2 - 20}px`; // Position above edge
+                    }
+                    
+                    updateEdgeFlow(fromId, toId, newFlow) {
+                        const edgeId = `${fromId}-${toId}`;
+                        const edge = this.edgeMap.get(edgeId);
+                        if (edge) {
+                            edge.flow = newFlow;
+                            this.adj[fromId][toId].flow = newFlow;
+                            edge.capacityElement.textContent = `${newFlow}/${edge.capacity}`;
+                            // Visual cue for flow amount (e.g., edge thickness or color intensity)
+                            const flowRatio = edge.capacity > 0 ? newFlow / edge.capacity : 0;
+                            edge.domElement.style.borderWidth = `${1 + flowRatio * 4}px`; // Example: thicker for more flow
+                            if (newFlow > 0 && newFlow < edge.capacity) {
+                                edge.domElement.style.borderColor = 'orange';
+                            } else if (newFlow === edge.capacity) {
+                                edge.domElement.style.borderColor = 'red'; // Saturated
+                            } else {
+                                edge.domElement.style.borderColor = '#999'; // Default or no flow
+                            }
+                        } else {
+                            logOperation(`Error: Edge ${fromId}-${toId} not found for flow update.`);
+                        }
+                    }
+
+                    clearGraph() {
+                        this.nodeMap.forEach(node => node.domElement.remove());
+                        this.edgeMap.forEach(edge => {
+                            edge.domElement.remove();
+                            edge.capacityElement.remove();
+                        });
+                        this.nodeMap.clear();
+                        this.edgeMap.clear();
+                        this.adj = {};
+                        this.resetDisplays();
+                        logOperation('Graph cleared.');
+                    }
+
+                    resetDisplays() {
+                        nfMaxFlowDisplay.textContent = 'Max Flow: N/A';
+                        nfFlowDetailsList.innerHTML = '';
+                        this.edgeMap.forEach(edge => this.updateEdgeFlow(edge.from, edge.to, 0));
+                        this.nodeMap.forEach(node => node.domElement.className = 'graph-node');
+                    }
+
+                    generateRandomGraph(numNodes = 6, numEdges = 8) {
+                        this.clearGraph();
+                        const nodeIds = [];
+                        // Ensure S (source) and T (sink) are standard if possible
+                        if (!this.nodeMap.has('S')) this.addNode('S', 50, nfGraphVizArea.clientHeight / 2);
+                        if (!this.nodeMap.has('T')) this.addNode('T', nfGraphVizArea.clientWidth - 50, nfGraphVizArea.clientHeight / 2);
+                        nodeIds.push('S', 'T');
+
+                        for (let i = 0; i < numNodes - 2; i++) {
+                            const id = String.fromCharCode(65 + i); // A, B, C...
+                            if (id !== 'S' && id !== 'T') {
+                                nodeIds.push(id);
+                                this.addNode(id);
+                            }
+                        }
+                        for (let i = 0; i < numEdges; i++) {
+                            let from = nodeIds[Math.floor(Math.random() * nodeIds.length)];
+                            let to = nodeIds[Math.floor(Math.random() * nodeIds.length)];
+                            // Avoid self-loops and edges to S or from T initially for typical flow graphs
+                            if (from === to || to === 'S' || from === 'T') { i--; continue; }
+                            
+                            const capacity = Math.floor(Math.random() * 15) + 5; // Capacities from 5 to 20
+                            const edgeKey = `${from}-${to}`;
+                            if (this.edgeMap.has(edgeKey)) { i--; continue; }
+
+                            this.addEdge(from, to, capacity);
+                        }
+                        nfSourceNodeInput.value = 'S';
+                        nfSinkNodeInput.value = 'T';
+                        logOperation(`Generated random graph.`);
+                    }
+                    
+                    resetNodeAndEdgeStyles() {
+                        this.nodeMap.forEach(node => {
+                            node.domElement.className = 'graph-node';
+                        });
+                        this.edgeMap.forEach(edge => {
+                            edge.domElement.className = 'graph-edge directed';
+                            this.updateEdgeFlow(edge.from, edge.to, 0); // Reset flow visual
+                        });
+                        this.resetDisplays();
+                    }
+
+                    async highlightNode(nodeId, className, duration = animationController.getDelay()) {
+                        const node = this.nodeMap.get(nodeId);
+                        if (node && node.domElement) {
+                            node.domElement.classList.add(className);
+                            await animationController.delay(duration);
+                            if (className !== 'source-node' && className !== 'sink-node' && !className.includes('path')) {
+                                node.domElement.classList.remove(className);
+                            }
+                        }
+                    }
+
+                    async highlightEdge(fromId, toId, className, duration = animationController.getDelay()) {
+                        const edge = this.edgeMap.get(`${fromId}-${toId}`);
+                        if (edge && edge.domElement) {
+                            edge.domElement.classList.add(className);
+                            await animationController.delay(duration);
+                            if (!className.includes('path')) { // Keep path highlights
+                                edge.domElement.classList.remove(className);
+                            }
+                        }
+                    }
+
+                    // Edmonds-Karp Algorithm
+                    async edmondsKarp(sourceId, sinkId) {
+                        if (!this.nodeMap.has(sourceId) || !this.nodeMap.has(sinkId)) {
+                            logOperation('Error: Source or Sink node not found.'); return;
+                        }
+                        this.resetNodeAndEdgeStyles();
+                        this.nodeMap.get(sourceId).domElement.classList.add('source-node');
+                        this.nodeMap.get(sinkId).domElement.classList.add('sink-node');
+                        logOperation(`Starting Edmonds-Karp from ${sourceId} to ${sinkId}.`);
+
+                        let totalFlow = 0;
+                        let iteration = 1;
+
+                        // Build initial residual graph structure from adj list (capacities and 0 flow)
+                        const residual = {};
+                        this.nodeMap.forEach(node => { residual[node.id] = {}; });
+
+                        this.edgeMap.forEach(edge => {
+                            residual[edge.from][edge.to] = edge.capacity - edge.flow; // Forward edge
+                            residual[edge.to][edge.from] = (residual[edge.to][edge.from] || 0) + edge.flow; // Backward edge (current flow)
+                        });
+                        
+                        // Make sure all reverse paths can be considered, even if 0 initial capacity
+                        // This is important for BFS to explore reverse edges correctly
+                        this.nodeMap.forEach(uNode => {
+                            this.nodeMap.forEach(vNode => {
+                                if (!residual[uNode.id][vNode.id]) residual[uNode.id][vNode.id] = 0;
+                            });
+                        });
+
+                        while (true) {
+                            await animationController.checkPlayPause();
+                            logOperation(`Edmonds-Karp: Iteration ${iteration} - Finding augmenting path...`);
+                            
+                            // BFS to find augmenting path in residual graph
+                            const parent = { [sourceId]: { node: null, edge: null } }; // {nodeId: {node: parentNode, edge: edgeIdFromParent}}
+                            const queue = [sourceId];
+                            let pathFound = false;
+                            let currentPathHighlight = []; // Store {from, to} for highlighting
+
+                            BFS_LOOP:
+                            while (queue.length > 0) {
+                                const u = queue.shift();
+                                await this.highlightNode(u, 'visited-bfs', animationController.getDelay() / 2);
+
+                                for (const v in residual[u]) {
+                                    if (!(v in parent) && residual[u][v] > 0) {
+                                        parent[v] = { node: u, edge: `${u}-${v}` }; // Store edge for path reconstruction
+                                        await this.highlightEdge(u, v, 'highlight-bfs', animationController.getDelay() / 2);
+                                        currentPathHighlight.push({from: u, to: v, type: 'forward'});
+                                        
+                                        if (v === sinkId) {
+                                            pathFound = true;
+                                            break BFS_LOOP;
+                                        }
+                                        queue.push(v);
+                                    }
+                                }
+                                if (pathFound) break; 
+                            }
+                            
+                            // Clear BFS highlights (non-path)
+                            this.nodeMap.forEach(n => n.domElement.classList.remove('visited-bfs'));
+                            this.edgeMap.forEach(e => e.domElement.classList.remove('highlight-bfs'));
+
+                            if (!pathFound) {
+                                logOperation('Edmonds-Karp: No more augmenting paths found.');
+                                break; // No more augmenting paths
+                            }
+
+                            // Calculate path flow (bottleneck capacity)
+                            let pathFlow = Infinity;
+                            let curr = sinkId;
+                            const augmentingPathEdges = [];
+                            while (curr !== sourceId) {
+                                const prev = parent[curr].node;
+                                pathFlow = Math.min(pathFlow, residual[prev][curr]);
+                                augmentingPathEdges.unshift({from: prev, to: curr}); // For highlighting
+                                curr = prev;
+                            }
+                            logOperation(`Edmonds-Karp: Augmenting path found with flow ${pathFlow}.`);
+
+                            // Highlight augmenting path
+                            for (const pEdge of augmentingPathEdges) {
+                                await this.highlightEdge(pEdge.from, pEdge.to, 'augmenting-path', animationController.getDelay());
+                            }
+
+                            // Augment flow and update residual graph
+                            totalFlow += pathFlow;
+                            let v = sinkId;
+                            while (v !== sourceId) {
+                                const u = parent[v].node;
+                                residual[u][v] -= pathFlow;
+                                residual[v][u] = (residual[v][u] || 0) + pathFlow;
+                                
+                                // Update flow on original graph edges
+                                if (this.adj[u] && this.adj[u][v]) { // Forward edge in original graph
+                                    this.adj[u][v].flow += pathFlow;
+                                    this.updateEdgeFlow(u,v, this.adj[u][v].flow);
+                                } else if (this.adj[v] && this.adj[v][u]) { // Backward edge in original graph (flow is reduced)
+                                    this.adj[v][u].flow -= pathFlow;
+                                    this.updateEdgeFlow(v,u, this.adj[v][u].flow);
+                                }
+                                v = u;
+                            }
+                            nfMaxFlowDisplay.textContent = `Max Flow: ${totalFlow}`;
+                            logOperation(`Edmonds-Karp: Total flow augmented to ${totalFlow}.`);
+                            
+                            // Clear augmenting path highlight after a delay
+                            await animationController.delay(animationController.getDelay() * 2);
+                            for (const pEdge of augmentingPathEdges) {
+                                const edgeObj = this.edgeMap.get(`${pEdge.from}-${pEdge.to}`);
+                                if(edgeObj) edgeObj.domElement.classList.remove('augmenting-path');
+                            }
+
+                            iteration++;
+                        }
+
+                        nfMaxFlowDisplay.textContent = `Max Flow: ${totalFlow}`;
+                        logOperation(`Edmonds-Karp complete. Maximum flow is ${totalFlow}.`);
+                        this.updateFlowDetailsDisplay();
+                    }
+
+                    updateFlowDetailsDisplay() {
+                        nfFlowDetailsList.innerHTML = '';
+                        this.edgeMap.forEach(edge => {
+                            if (edge.flow > 0) {
+                                const li = document.createElement('li');
+                                li.textContent = `Edge ${edge.from} → ${edge.to}: Flow = ${edge.flow} (Capacity = ${edge.capacity})`;
+                                nfFlowDetailsList.appendChild(li);
+                            }
+                        });
+                    }
+
+                    // --- Dragging Logic ---
+                    handleMouseDown(event) {
+                        if (event.target.classList.contains('graph-node') || event.target.parentElement.classList.contains('graph-node')) {
+                            this.draggingNode = event.target.classList.contains('graph-node') ? event.target : event.target.parentElement;
+                            const nodeId = this.draggingNode.dataset.id;
+                            const node = this.nodeMap.get(nodeId);
+                            const rect = this.draggingNode.getBoundingClientRect();
+                            const vizRect = nfGraphVizArea.getBoundingClientRect();
+                            this.offsetX = event.clientX - rect.left + vizRect.left;
+                            this.offsetY = event.clientY - rect.top + vizRect.top;
+                            this.draggingNode.style.cursor = 'grabbing';
+                        }
+                    }
+                    handleMouseMove(event) {
+                        if (this.draggingNode) {
+                            event.preventDefault();
+                            const nodeId = this.draggingNode.dataset.id;
+                            const node = this.nodeMap.get(nodeId);
+                            const vizRect = nfGraphVizArea.getBoundingClientRect();
+                            let newX = event.clientX - this.offsetX + this.nodeRadius;
+                            let newY = event.clientY - this.offsetY + this.nodeRadius;
+
+                            newX = Math.max(this.nodeRadius, Math.min(newX, vizRect.width - this.nodeRadius));
+                            newY = Math.max(this.nodeRadius, Math.min(newY, vizRect.height - this.nodeRadius));
+
+                            node.x = newX;
+                            node.y = newY;
+                            this.draggingNode.style.left = `${newX - this.nodeRadius}px`;
+                            this.draggingNode.style.top = `${newY - this.nodeRadius}px`;
+                            this.updateConnectedEdges(nodeId);
+                        }
+                    }
+                    handleMouseUp() {
+                        if (this.draggingNode) {
+                            this.draggingNode.style.cursor = 'grab';
+                            this.draggingNode = null;
+                        }
+                    }
+                    updateConnectedEdges(nodeId) {
+                        this.edgeMap.forEach(edge => {
+                            if (edge.from === nodeId || edge.to === nodeId) {
+                                const fromNode = this.nodeMap.get(edge.from);
+                                const toNode = this.nodeMap.get(edge.to);
+                                this.updateEdgeElementStyle(edge.domElement, fromNode, toNode);
+                                this.updateCapacityElementPosition(edge.capacityElement, fromNode, toNode);
+                            }
+                        });
+                    }
+                }
+
+                const graphNF = new NetworkFlowVisualization();
+
+                // Event Listeners
+                document.getElementById('nf-generate-random-graph').addEventListener('click', () => graphNF.generateRandomGraph());
+                document.getElementById('nf-clear-graph').addEventListener('click', () => graphNF.clearGraph());
+
+                document.getElementById('nf-add-node').addEventListener('click', () => {
+                    const val = nfAddNodeInput.value.trim().toUpperCase();
+                    if (val) { graphNF.addNode(val); nfAddNodeInput.value = ''; }
+                    else { logOperation('Node ID cannot be empty.'); }
+                });
+
+                document.getElementById('nf-add-edge').addEventListener('click', () => {
+                    const from = nfEdgeFromInput.value.trim().toUpperCase();
+                    const to = nfEdgeToInput.value.trim().toUpperCase();
+                    const capacity = parseInt(nfEdgeCapacityInput.value.trim());
+                    if (from && to && !isNaN(capacity)) {
+                        if (from === to) { logOperation('Self-loops are not typical in standard network flow problems.'); return; }
+                        graphNF.addEdge(from, to, capacity);
+                        nfEdgeFromInput.value = ''; nfEdgeToInput.value = ''; nfEdgeCapacityInput.value = '1';
+                    } else {
+                        logOperation('From, To, and valid Capacity needed for edge.');
+                    }
+                });
+
+                document.getElementById('run-edmonds-karp').addEventListener('click', () => {
+                    const source = nfSourceNodeInput.value.trim().toUpperCase();
+                    const sink = nfSinkNodeInput.value.trim().toUpperCase();
+                    if (source && sink) {
+                         if (source === sink) { logOperation('Source and Sink cannot be the same node.'); return; }
+                        graphNF.edmondsKarp(source, sink);
+                    } else {
+                        logOperation('Source and Sink nodes are required for Edmonds-Karp.');
+                    }
+                });
+
+                // Initial setup
+                graphNF.generateRandomGraph(6,7);
+                logOperation('Network Flow visualization initialized.');
+
+            });
+        </script>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graph Traversal (DFS & BFS)</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <script src="../js/common.js"></script>
+</head>
+<body>
+    <div class="container" id="app">
+        <script>
+            const navBar = createNavBar('DFS & BFS');
+            document.getElementById('app').appendChild(navBar);
+            const breadcrumbs = createBreadcrumbs([
+                { name: 'Home', url: '../index.html' },
+                { name: 'Graph Traversal (DFS & BFS)' }
+            ]);
+            document.getElementById('app').appendChild(breadcrumbs);
+        </script>
+        <div class="header">
+            <h1>🌲 Graph Traversal (DFS & BFS)</h1>
+            <p>Visualize Depth-First Search and Breadth-First Search algorithms.</p>
+        </div>
+                <div class="content-wrapper">
+            <div class="controls">
+                <h2>Controls</h2>
+                <div class="control-group">
+                    <label for="graph-type">Graph Type:</label>
+                    <select id="graph-type">
+                        <option value="undirected">Undirected</option>
+                        <option value="directed">Directed</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <button id="generate-random-graph">Generate Random Graph</button>
+                    <button id="clear-graph">Clear Graph</button>
+                </div>
+                <div class="control-group">
+                    <input type="text" id="add-node-value" placeholder="Node (e.g., A)">
+                    <button id="add-node">Add Node</button>
+                </div>
+                <div class="control-group">
+                    <input type="text" id="edge-from" placeholder="From Node">
+                    <input type="text" id="edge-to" placeholder="To Node">
+                     <input type="number" id="edge-weight" placeholder="Weight (opt)" style="width:100px;">
+                    <button id="add-edge">Add Edge</button>
+                </div>
+                <hr>
+                <div class="control-group">
+                    <label for="start-node-traversal">Start Node:</label>
+                    <input type="text" id="start-node-traversal" placeholder="Enter start node">
+                </div>
+                <div class="control-group">
+                    <button id="run-dfs">Run DFS</button>
+                    <button id="run-bfs">Run BFS</button>
+                </div>
+                <div class="animation-controls">
+                    <button id="play-pause-animation">Play</button>
+                    <button id="step-animation">Step</button>
+                    <label for="animation-speed">Speed:</label>
+                    <input type="range" id="animation-speed" min="1" max="10" value="5">
+                </div>
+            </div>
+
+            <div class="visualization-area-container">
+                <h2>Graph Visualization</h2>
+                <div id="graph-visualization-area" class="visualization-area graph-viz"></div>
+                <div id="traversal-output-area">
+                    <h3>Traversal Order:</h3>
+                    <p id="traversal-order-display"></p>
+                    <h3>Stack/Queue State (DFS/BFS):</h3>
+                    <p id="data-structure-state-display"></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="panels">
+            <div class="info-panel operations-log">
+                <h3>Operations Log</h3>
+                <ul id="operations-list"></ul>
+            </div>
+
+            <div class="info-panel code-snippet">
+                <h3>Code Snippet</h3>
+                <select id="code-snippet-selector">
+                    <option value="dfs">DFS (Recursive)</option>
+                    <option value="dfs_iterative">DFS (Iterative)</option>
+                    <option value="bfs">BFS</option>
+                </select>
+                <pre><code id="code-display" class="language-javascript">// Select an algorithm to see code</code></pre>
+            </div>
+        </div>
+
+        <div class="panels">
+            <div class="info-panel complexity-panel">
+                <script>
+                    const traversalComplexity = {
+                        dfs_bfs_time: { representation: 'Adj. List', worst: 'O(V + E)'},
+                        dfs_bfs_time_matrix: { representation: 'Adj. Matrix', worst: 'O(V^2)'},
+                        dfs_bfs_space: { representation: 'All', worst: 'O(V)'}
+                    };
+                    document.currentScript.parentElement.appendChild(createComplexityPanel(traversalComplexity, 'Graph Traversal (DFS & BFS)'));
+                </script>
+            </div>
+
+            <div class="info-panel applications-panel">
+                <h3>Applications</h3>
+                <h4>DFS:</h4>
+                <ul>
+                    <li>Finding connected components.</li>
+                    <li>Topological sorting.</li>
+                    <li>Solving puzzles (e.g., mazes).</li>
+                    <li>Path finding.</li>
+                </ul>
+                <h4>BFS:</h4>
+                <ul>
+                    <li>Finding the shortest path in unweighted graphs.</li>
+                    <li>Web crawlers.</li>
+                    <li>Network broadcasting.</li>
+                    <li>Garbage collection (Cheney's algorithm).</li>
+                </ul>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const animationController = new AnimationController(
+                    document.getElementById('play-pause-animation'),
+                    document.getElementById('step-animation'),
+                    document.getElementById('animation-speed')
+                );
+                const operationsLog = document.getElementById('operations-list');
+                function logOperation(message) {
+                    const li = document.createElement('li');
+                    li.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                    operationsLog.insertBefore(li, operationsLog.firstChild);
+                    if (operationsLog.children.length > 15) { operationsLog.removeChild(operationsLog.lastChild); }
+                }
+
+                const codeSnippets = {
+                    dfs: 
+`function dfsRecursive(graph, startNode, visited = new Set()) {\n  console.log(startNode); // Process node\n  visited.add(startNode);\n  for (const neighbor of graph[startNode]) {\n    if (!visited.has(neighbor)) {\n      dfsRecursive(graph, neighbor, visited);\n    }\n  }\n}`,
+                    dfs_iterative:
+`function dfsIterative(graph, startNode) {\n  const stack = [startNode];\n  const visited = new Set();\n  while (stack.length > 0) {\n    const node = stack.pop();\n    if (!visited.has(node)) {\n      console.log(node); // Process node\n      visited.add(node);\n      // Add neighbors in reverse order to visit them in typical order\n      const neighbors = graph[node] || [];
+      for (let i = neighbors.length - 1; i >= 0; i--) {\n        if (!visited.has(neighbors[i])) {\n          stack.push(neighbors[i]);\n        }\n      }\n    }\n  }\n}`,
+                    bfs:
+`function bfs(graph, startNode) {\n  const queue = [startNode];\n  const visited = new Set([startNode]);\n  while (queue.length > 0) {\n    const node = queue.shift();\n    console.log(node); // Process node\n    const neighbors = graph[node] || [];
+    for (const neighbor of neighbors) {\n      if (!visited.has(neighbor)) {\n        visited.add(neighbor);\n        queue.push(neighbor);\n      }\n    }\n  }\n}`
+                };
+                const codeSelector = document.getElementById('code-snippet-selector');
+                const codeDisplay = document.getElementById('code-display');
+                codeSelector.addEventListener('change', (event) => {
+                    codeDisplay.textContent = codeSnippets[event.target.value];
+                    if (typeof hljs !== 'undefined') { hljs.highlightElement(codeDisplay); }
+                });
+                codeDisplay.textContent = codeSnippets[codeSelector.value];
+                if (typeof hljs !== 'undefined') { hljs.highlightElement(codeDisplay); }
+
+                logOperation('Graph Traversal page loaded. Ready for operations.');
+                                const graphVizArea = document.getElementById('graph-visualization-area');
+                const traversalOrderDisplay = document.getElementById('traversal-order-display');
+                const dataStructureStateDisplay = document.getElementById('data-structure-state-display');
+
+                const graphTypeSelect = document.getElementById('graph-type');
+                const addNodeInput = document.getElementById('add-node-value');
+                const edgeFromInput = document.getElementById('edge-from');
+                const edgeToInput = document.getElementById('edge-to');
+                const edgeWeightInput = document.getElementById('edge-weight');
+                const startNodeInput = document.getElementById('start-node-traversal');
+
+                let isDirected = false;
+                let nodes = {}; // { id: { x, y, element, edges: [] } }
+                let adj = {}; // Adjacency list: { nodeId: [{ neighbor: neighborId, weight: w, element: edgeElement }] }
+
+                class GraphVisualization {
+                    constructor() {
+                        this.nodeMap = new Map(); // Stores node objects {id, x, y, domElement}
+                        this.edgeMap = new Map(); // Stores edge objects {id, from, to, weight, domElement, weightElement}
+                        this.isDirected = false;
+                        this.adj = {}; // Adjacency list for algorithms
+                        this.nodePositions = {}; // For rendering: { nodeId: {x, y} }
+                        this.nodeRadius = 20;
+                        this.draggingNode = null;
+                        this.offsetX = 0;
+                        this.offsetY = 0;
+
+                        graphVizArea.addEventListener('mousedown', this.handleMouseDown.bind(this));
+                        graphVizArea.addEventListener('mousemove', this.handleMouseMove.bind(this));
+                        graphVizArea.addEventListener('mouseup', this.handleMouseUp.bind(this));
+                        graphVizArea.addEventListener('mouseleave', this.handleMouseUp.bind(this)); // Stop dragging if mouse leaves area
+                    }
+
+                    setDirected(directed) {
+                        this.isDirected = directed;
+                        this.render(); // Re-render to update edge arrows
+                    }
+
+                    addNode(id, x, y) {
+                        if (this.nodeMap.has(id)) {
+                            logOperation(`Node ${id} already exists.`);
+                            return;
+                        }
+                        const nodeElement = document.createElement('div');
+                        nodeElement.className = 'graph-node';
+                        nodeElement.textContent = id;
+                        nodeElement.dataset.id = id;
+                        
+                        // Try to position somewhat centrally if x,y not provided
+                        const vizWidth = graphVizArea.clientWidth;
+                        const vizHeight = graphVizArea.clientHeight;
+                        const posX = x || Math.random() * (vizWidth - 80) + 40;
+                        const posY = y || Math.random() * (vizHeight - 80) + 40;
+
+                        nodeElement.style.left = `${posX - this.nodeRadius}px`;
+                        nodeElement.style.top = `${posY - this.nodeRadius}px`;
+
+                        this.nodeMap.set(id, { id, x: posX, y: posY, domElement: nodeElement });
+                        this.adj[id] = this.adj[id] || [];
+                        graphVizArea.appendChild(nodeElement);
+                        logOperation(`Node ${id} added.`);
+                    }
+
+                    addEdge(fromId, toId, weight = null) {
+                        if (!this.nodeMap.has(fromId) || !this.nodeMap.has(toId)) {
+                            logOperation(`Error: One or both nodes (${fromId}, ${toId}) do not exist.`);
+                            return;
+                        }
+                        const edgeId = `${fromId}-${toId}`;
+                        const reverseEdgeId = `${toId}-${fromId}`;
+
+                        if (this.edgeMap.has(edgeId) || (!this.isDirected && this.edgeMap.has(reverseEdgeId))) {
+                            logOperation(`Edge between ${fromId} and ${toId} already exists.`);
+                            return;
+                        }
+
+                        this.adj[fromId] = this.adj[fromId] || [];
+                        this.adj[fromId].push({ neighbor: toId, weight });
+                        if (!this.isDirected) {
+                            this.adj[toId] = this.adj[toId] || [];
+                            this.adj[toId].push({ neighbor: fromId, weight });
+                        }
+                        this.renderEdge(fromId, toId, weight);
+                        logOperation(`Edge added between ${fromId} and ${toId}` + (weight ? ` with weight ${weight}` : '') + ` (Directed: ${this.isDirected}).`);
+                    }
+                    
+                    renderEdge(fromId, toId, weight) {
+                        const fromNode = this.nodeMap.get(fromId);
+                        const toNode = this.nodeMap.get(toId);
+                        if (!fromNode || !toNode) return;
+
+                        const edgeElement = document.createElement('div');
+                        edgeElement.className = 'graph-edge';
+                        if (this.isDirected) edgeElement.classList.add('directed');
+                        
+                        const edgeId = this.isDirected ? `${fromId}-${toId}` : ([fromId,toId].sort().join('-'));
+                        this.edgeMap.set(edgeId, { from: fromId, to: toId, weight, domElement: edgeElement });
+
+                        graphVizArea.appendChild(edgeElement);
+                        this.updateEdgeElement(edgeElement, fromNode, toNode);
+
+                        if (weight !== null && weight !== undefined) {
+                            const weightElement = document.createElement('div');
+                            weightElement.className = 'edge-weight';
+                            weightElement.textContent = weight;
+                            this.edgeMap.get(edgeId).weightElement = weightElement;
+                            graphVizArea.appendChild(weightElement);
+                            this.updateWeightElementPosition(weightElement, fromNode, toNode);
+                        }
+                    }
+
+                    updateEdgeElement(edgeElement, fromNode, toNode) {
+                        const dx = toNode.x - fromNode.x;
+                        const dy = toNode.y - fromNode.y;
+                        const length = Math.sqrt(dx * dx + dy * dy);
+                        const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+
+                        edgeElement.style.width = `${length}px`;
+                        edgeElement.style.left = `${fromNode.x}px`;
+                        edgeElement.style.top = `${fromNode.y - edgeElement.offsetHeight / 2}px`;
+                        edgeElement.style.transform = `rotate(${angle}deg)`;
+                    }
+
+                    updateWeightElementPosition(weightElement, fromNode, toNode) {
+                        if (!weightElement) return;
+                        const midX = (fromNode.x + toNode.x) / 2;
+                        const midY = (fromNode.y + toNode.y) / 2;
+                        weightElement.style.left = `${midX}px`;
+                        weightElement.style.top = `${midY}px`;
+                    }
+
+                    render() {
+                        // Clear existing edges (nodes are updated in place or re-added)
+                        this.edgeMap.forEach(edge => {
+                            if (edge.domElement) edge.domElement.remove();
+                            if (edge.weightElement) edge.weightElement.remove();
+                        });
+                        this.edgeMap.clear();
+
+                        // Re-render edges based on current adj list and node positions
+                        const drawnEdges = new Set(); // To avoid drawing undirected edges twice
+                        for (const nodeId in this.adj) {
+                            this.adj[nodeId].forEach(edgeInfo => {
+                                const pair = [nodeId, edgeInfo.neighbor].sort().join('-');
+                                if (!this.isDirected && drawnEdges.has(pair)) return;
+                                
+                                this.renderEdge(nodeId, edgeInfo.neighbor, edgeInfo.weight);
+                                if (!this.isDirected) drawnEdges.add(pair);
+                            });
+                        }
+                    }
+                    
+                    clearGraph() {
+                        this.nodeMap.forEach(node => node.domElement.remove());
+                        this.edgeMap.forEach(edge => {
+                            if(edge.domElement) edge.domElement.remove();
+                            if(edge.weightElement) edge.weightElement.remove();
+                        });
+                        this.nodeMap.clear();
+                        this.edgeMap.clear();
+                        this.adj = {};
+                        traversalOrderDisplay.textContent = '';
+                        dataStructureStateDisplay.textContent = '';
+                        logOperation('Graph cleared.');
+                    }
+
+                    generateRandomGraph(numNodes = 5, numEdges = 7) {
+                        this.clearGraph();
+                        const nodeIds = [];
+                        for (let i = 0; i < numNodes; i++) {
+                            const id = String.fromCharCode(65 + i); // A, B, C...
+                            nodeIds.push(id);
+                            this.addNode(id);
+                        }
+                        for (let i = 0; i < numEdges; i++) {
+                            let from = nodeIds[Math.floor(Math.random() * numNodes)];
+                            let to = nodeIds[Math.floor(Math.random() * numNodes)];
+                            if (from === to) continue; // Avoid self-loops for simplicity here
+                            // Avoid duplicate edges (simple check)
+                            const edgeExists = this.adj[from] && this.adj[from].some(e => e.neighbor === to);
+                            const reverseEdgeExists = !this.isDirected && this.adj[to] && this.adj[to].some(e => e.neighbor === from);
+                            if (edgeExists || reverseEdgeExists) {
+                                i--; // try again
+                                continue;
+                            }
+                            this.addEdge(from, to, this.isDirected ? null : Math.floor(Math.random()*10)+1 ); // Optional weights for undirected
+                        }
+                        logOperation(`Generated random graph (${numNodes} nodes, ~${numEdges} edges).`);
+                    }
+
+                    // --- Animation Helpers ---
+                    async highlightNode(nodeId, className, duration = animationController.getDelay()) {
+                        const node = this.nodeMap.get(nodeId);
+                        if (node && node.domElement) {
+                            node.domElement.classList.add(className);
+                            await animationController.delay(duration);
+                            // Don't remove 'visited' or 'path' classes, only transient highlights
+                            if (className !== 'visited' && className !== 'path') {
+                                node.domElement.classList.remove(className);
+                            }
+                        }
+                    }
+
+                    async highlightEdge(fromId, toId, className, duration = animationController.getDelay()) {
+                        const edgeId = this.isDirected ? `${fromId}-${toId}` : ([fromId, toId].sort().join('-'));
+                        const edge = this.edgeMap.get(edgeId);
+                        if (edge && edge.domElement) {
+                            edge.domElement.classList.add(className);
+                            if (edge.domElement.classList.contains('directed')) edge.domElement.classList.add('directed'); // re-apply if removed by classList.add
+                            await animationController.delay(duration);
+                             if (className !== 'path') {
+                                edge.domElement.classList.remove(className);
+                                if (edge.domElement.classList.contains('directed')) edge.domElement.classList.add('directed');
+                            }
+                        }
+                    }
+                    
+                    resetNodeStyles() {
+                        this.nodeMap.forEach(node => {
+                            node.domElement.className = 'graph-node'; // Reset to base class
+                        });
+                        this.edgeMap.forEach(edge => {
+                            edge.domElement.className = 'graph-edge';
+                            if (this.isDirected) edge.domElement.classList.add('directed');
+                        });
+                        traversalOrderDisplay.textContent = '';
+                        dataStructureStateDisplay.textContent = '';
+                    }
+
+                    // --- Traversal Algorithms ---
+                    async dfs(startNodeId) {
+                        if (!this.nodeMap.has(startNodeId)) {
+                            logOperation(`Error: Start node ${startNodeId} not found.`); return;
+                        }
+                        this.resetNodeStyles();
+                        logOperation(`Starting DFS from ${startNodeId}`);
+                        const stack = [startNodeId];
+                        const visited = new Set();
+                        let traversalResult = [];
+
+                        const startNodeObj = this.nodeMap.get(startNodeId);
+                        if(startNodeObj) startNodeObj.domElement.classList.add('start-node');
+
+                        while (stack.length > 0) {
+                            await animationController.checkPlayPause();
+                            const currentNodeId = stack.pop();
+                            dataStructureStateDisplay.textContent = `Stack: [${stack.join(', ')}] ← ${currentNodeId}`;
+                            
+                            if (!visited.has(currentNodeId)) {
+                                visited.add(currentNodeId);
+                                traversalResult.push(currentNodeId);
+                                traversalOrderDisplay.textContent = traversalResult.join(' → ');
+                                await this.highlightNode(currentNodeId, 'current');
+                                this.nodeMap.get(currentNodeId).domElement.classList.add('visited');
+
+                                const neighbors = (this.adj[currentNodeId] || []).slice().reverse(); // Process in specific order
+                                for (const edge of neighbors) {
+                                    const neighborId = edge.neighbor;
+                                    if (!visited.has(neighborId)) {
+                                        await this.highlightEdge(currentNodeId, neighborId, 'highlight');
+                                        stack.push(neighborId);
+                                    }
+                                }
+                            }
+                             await this.highlightNode(currentNodeId, 'current'); // remove current highlight
+                        }
+                        logOperation(`DFS complete. Order: ${traversalResult.join(' → ')}`);
+                        dataStructureStateDisplay.textContent = `Stack: []`;
+                    }
+
+                    async bfs(startNodeId) {
+                        if (!this.nodeMap.has(startNodeId)) {
+                            logOperation(`Error: Start node ${startNodeId} not found.`); return;
+                        }
+                        this.resetNodeStyles();
+                        logOperation(`Starting BFS from ${startNodeId}`);
+                        const queue = [startNodeId];
+                        const visited = new Set([startNodeId]);
+                        let traversalResult = [];
+
+                        const startNodeObj = this.nodeMap.get(startNodeId);
+                        if(startNodeObj) startNodeObj.domElement.classList.add('start-node');
+                        this.nodeMap.get(startNodeId).domElement.classList.add('visited');
+
+                        while (queue.length > 0) {
+                            await animationController.checkPlayPause();
+                            const currentNodeId = queue.shift();
+                            dataStructureStateDisplay.textContent = `${currentNodeId} ← Queue: [${queue.join(', ')}]`;
+                            
+                            traversalResult.push(currentNodeId);
+                            traversalOrderDisplay.textContent = traversalResult.join(' → ');
+                            await this.highlightNode(currentNodeId, 'current');
+
+                            const neighbors = this.adj[currentNodeId] || [];
+                            for (const edge of neighbors) {
+                                const neighborId = edge.neighbor;
+                                if (!visited.has(neighborId)) {
+                                    visited.add(neighborId);
+                                    this.nodeMap.get(neighborId).domElement.classList.add('visited');
+                                    await this.highlightEdge(currentNodeId, neighborId, 'highlight');
+                                    queue.push(neighborId);
+                                }
+                            }
+                            await this.highlightNode(currentNodeId, 'current'); // remove current highlight
+                        }
+                        logOperation(`BFS complete. Order: ${traversalResult.join(' → ')}`);
+                        dataStructureStateDisplay.textContent = `Queue: []`;
+                    }
+
+                    // --- Dragging Logic ---
+                    handleMouseDown(event) {
+                        if (event.target.classList.contains('graph-node')) {
+                            this.draggingNode = event.target;
+                            const nodeId = this.draggingNode.dataset.id;
+                            const node = this.nodeMap.get(nodeId);
+                            this.offsetX = event.clientX - node.x;
+                            this.offsetY = event.clientY - node.y;
+                            this.draggingNode.style.cursor = 'grabbing';
+                        }
+                    }
+
+                    handleMouseMove(event) {
+                        if (this.draggingNode) {
+                            event.preventDefault(); // Prevent text selection
+                            const nodeId = this.draggingNode.dataset.id;
+                            const node = this.nodeMap.get(nodeId);
+                            
+                            const vizRect = graphVizArea.getBoundingClientRect();
+                            let newX = event.clientX - this.offsetX;
+                            let newY = event.clientY - this.offsetY;
+
+                            // Constrain within bounds (approximate)
+                            newX = Math.max(this.nodeRadius, Math.min(newX, vizRect.width - this.nodeRadius));
+                            newY = Math.max(this.nodeRadius, Math.min(newY, vizRect.height - this.nodeRadius));
+
+                            node.x = newX;
+                            node.y = newY;
+                            this.draggingNode.style.left = `${newX - this.nodeRadius}px`;
+                            this.draggingNode.style.top = `${newY - this.nodeRadius}px`;
+                            this.updateConnectedEdges(nodeId);
+                        }
+                    }
+
+                    handleMouseUp() {
+                        if (this.draggingNode) {
+                            this.draggingNode.style.cursor = 'grab';
+                            this.draggingNode = null;
+                        }
+                    }
+
+                    updateConnectedEdges(nodeId) {
+                        // Update edges connected to the dragged node
+                        this.edgeMap.forEach(edge => {
+                            if (edge.from === nodeId || edge.to === nodeId) {
+                                const fromNode = this.nodeMap.get(edge.from);
+                                const toNode = this.nodeMap.get(edge.to);
+                                this.updateEdgeElement(edge.domElement, fromNode, toNode);
+                                this.updateWeightElementPosition(edge.weightElement, fromNode, toNode);
+                            }
+                        });
+                    }
+                }
+
+                const graph = new GraphVisualization(); 
+
+                // Event Listeners for Controls
+                graphTypeSelect.addEventListener('change', (e) => {
+                    graph.setDirected(e.target.value === 'directed');
+                    logOperation(`Graph type set to ${e.target.value}.`);
+                });
+
+                document.getElementById('generate-random-graph').addEventListener('click', () => {
+                    graph.generateRandomGraph();
+                });
+
+                document.getElementById('clear-graph').addEventListener('click', () => {
+                    graph.clearGraph();
+                });
+
+                document.getElementById('add-node').addEventListener('click', () => {
+                    const val = addNodeInput.value.trim().toUpperCase();
+                    if (val) {
+                        graph.addNode(val);
+                        addNodeInput.value = '';
+                    } else {
+                        logOperation('Node ID cannot be empty.');
+                    }
+                });
+
+                document.getElementById('add-edge').addEventListener('click', () => {
+                    const from = edgeFromInput.value.trim().toUpperCase();
+                    const to = edgeToInput.value.trim().toUpperCase();
+                    const weightStr = edgeWeightInput.value.trim();
+                    const weight = weightStr === '' ? null : parseInt(weightStr);
+
+                    if (from && to) {
+                        if (from === to) {
+                            logOperation('Self-loops are not allowed in this visualization.'); return;
+                        }
+                        if (weightStr !== '' && isNaN(weight)) {
+                            logOperation('Weight must be a number or empty.'); return;
+                        }
+                        graph.addEdge(from, to, weight);
+                        edgeFromInput.value = ''; edgeToInput.value = ''; edgeWeightInput.value = '';
+                    } else {
+                        logOperation('Both source and target nodes must be specified for an edge.');
+                    }
+                });
+
+                document.getElementById('run-dfs').addEventListener('click', () => {
+                    const startNode = startNodeInput.value.trim().toUpperCase();
+                    if (startNode) {
+                        graph.dfs(startNode);
+                    } else {
+                        logOperation('Please enter a start node for DFS.');
+                    }
+                });
+
+                document.getElementById('run-bfs').addEventListener('click', () => {
+                    const startNode = startNodeInput.value.trim().toUpperCase();
+                    if (startNode) {
+                        graph.bfs(startNode);
+                    } else {
+                        logOperation('Please enter a start node for BFS.');
+                    }
+                });
+
+                // Initial setup
+                graph.setDirected(graphTypeSelect.value === 'directed');
+                graph.generateRandomGraph(4,4); // Start with a small random graph
+                logOperation('Graph traversal visualization initialized.');
+
+            });
+        </script>
+
+    </div>
+</body>
+</html>

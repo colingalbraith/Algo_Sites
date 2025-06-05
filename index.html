@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algorithm Visualization Hub</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="js/common.js"></script>
+</head>
+<body>
+    <div class="container" id="app">
+        <script>
+            // Add navigation elements
+            const navBar = createNavBar('Home');
+            document.getElementById('app').appendChild(navBar);
+        </script>
+        
+        <div class="header">
+            <h1>🧮 Algorithm Visualization Hub</h1>
+            <p class="subtitle">Interactive visualizations of data structures and algorithms</p>
+        </div>
+        
+        <div class="algo-grid" id="visualizations">
+            <!-- Graph Representation Card -->
+            <div class="algo-card">
+                <div class="algo-card-icon">
+                    <i class="fas fa-project-diagram"></i>
+                </div>
+                <div class="algo-card-content">
+                    <h3>Graph Representation</h3>
+                    <p>Visualize and compare adjacency matrices and adjacency lists for graph representation with interactive examples.</p>
+                    <a href="pages/graph-representation.html" class="algo-card-link">Explore →</a>
+                </div>
+            </div>
+            
+            <!-- Stack Visualization Card -->
+            <div class="algo-card">
+                <div class="algo-card-icon">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <div class="algo-card-content">
+                    <h3>Stack Visualization</h3>
+                    <p>Understand LIFO (Last In, First Out) data structure with interactive push and pop operations and animations.</p>
+                    <a href="pages/stack.html" class="algo-card-link">Explore →</a>
+                </div>
+            </div>
+            
+            <!-- Queue Visualization Card -->
+            <div class="algo-card">
+                <div class="algo-card-icon">
+                    <i class="fas fa-people-arrows"></i>
+                </div>
+                <div class="algo-card-content">
+                    <h3>Queue Visualization</h3>
+                    <p>Understand FIFO (First In, First Out) data structure with interactive enqueue and dequeue operations.</p>
+                    <a href="pages/queue.html" class="algo-card-link">Explore →</a>
+                </div>
+            </div>
+            
+            <!-- Graph Traversal Card -->
+            <div class="algo-card">
+                <div class="algo-card-image" style="background-image: url('https://i.imgur.com/6RUWPBW.png');"></div>
+                <div class="algo-card-content">
+                    <h3>Graph Traversal</h3>
+                    <p>Visualize Depth-First Search (DFS) and Breadth-First Search (BFS) algorithms on graphs.</p>
+                    <a href="pages/graph-traversal.html" class="algo-card-link">Explore</a>
+                </div>
+            </div>
+            
+            <!-- Shortest Path Card -->
+            <div class="algo-card">
+                <div class="algo-card-image" style="background-image: url('https://i.imgur.com/YHy1CUZ.png');"></div>
+                <div class="algo-card-content">
+                    <h3>Shortest Path Algorithms</h3>
+                    <p>Compare Dijkstra's and Bellman-Ford algorithms for finding shortest paths in graphs.</p>
+                    <a href="pages/shortest-path.html" class="algo-card-link">Explore</a>
+                </div>
+            </div>
+            
+                        <!-- Network Flow Card -->
+            <div class="algo-card">
+                <div class="algo-card-image" style="background-image: url('https://i.imgur.com/pQNQYLB.png');"></div>
+                <div class="algo-card-content">
+                    <h3>Network Flow</h3>
+                    <p>Visualize Ford-Fulkerson and Edmonds-Karp algorithms for solving network flow problems.</p>
+                    <a href="pages/network-flow.html" class="algo-card-link">Explore</a>
+                </div>
+            </div>
+
+            <!-- Array Operations Card -->
+            <div class="algo-card">
+                <div class="algo-card-image" style="background-image: url('https://i.imgur.com/O3tKJyL.png');"></div> <!-- Placeholder image -->
+                <div class="algo-card-content">
+                    <h3>Array Operations</h3>
+                    <p>Visualize common array operations like insertion, deletion, and search.</p>
+                    <a href="pages/array.html" class="algo-card-link">Explore</a>
+                </div>
+            </div>
+
+            <!-- Linked List Card -->
+            <div class="algo-card">
+                <div class="algo-card-image" style="background-image: url('https://i.imgur.com/sD4Z2Nq.png');"></div> <!-- Placeholder image -->
+                <div class="algo-card-content">
+                    <h3>Linked List</h3>
+                    <p>Visualize common linked list operations like insertion, deletion, and traversal.</p>
+                    <a href="pages/linked-list.html" class="algo-card-link">Explore</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section-divider"></div>
+        
+        <div class="about-section">
+            <h2 class="section-title">About This Project</h2>
+            <p class="section-description">Explore interactive visualizations of fundamental data structures and algorithms to enhance your understanding of computer science concepts.</p>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🎯</div>
+                    <h3>Purpose</h3>
+                    <div class="complexity-metric">
+                        This interactive platform helps visualize and understand algorithms and data structures through animations and step-by-step explanations.
+                    </div>
+                </div>
+                
+                <div class="feature-card">
+                <div class="feature-icon">✨</div>
+                <h3>Features</h3>
+                    <div class="complexity-metric">
+                        <ul style="list-style-type: none; padding: 0;">
+                            <li>✓ Interactive visualizations</li>
+                            <li>✓ Step-by-step animations</li>
+                            <li>✓ Complexity analysis</li>
+                            <li>✓ Real-world applications</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="complexity-card">
+                    <h3>Coming Soon</h3>
+                    <div class="complexity-metric">
+                        <ul style="list-style-type: none; padding: 0;">
+                            <li>• Sorting algorithm visualizations</li>
+                            <li>• Tree data structures</li>
+                            <li>• Dynamic programming</li>
+                            <li>• Algorithm comparison tool</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

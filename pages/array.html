@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Array Operations</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <script src="../js/common.js"></script>
+</head>
+<body>
+    <div class="container" id="app">
+        <script>
+            const navBar = createNavBar('Array');
+            document.getElementById('app').appendChild(navBar);
+            const breadcrumbs = createBreadcrumbs([
+                { name: 'Home', url: '../index.html' },
+                { name: 'Array Operations' }
+            ]);
+            document.getElementById('app').appendChild(breadcrumbs);
+        </script>
+        <div class="header">
+            <h1>📊 Array Operations</h1>
+            <p>Visualize common array operations like insertion, deletion, and search.</p>
+        </div>
+                <div class="content-wrapper">
+            <div class="controls">
+                <h2>Controls</h2>
+                <div class="control-group">
+                    <input type="text" id="array-value" placeholder="Enter value">
+                    <input type="number" id="array-index" placeholder="Enter index (optional)">
+                </div>
+                <div class="control-group">
+                    <button id="create-array">Create/Reset</button>
+                    <input type="text" id="array-initial-values" placeholder="e.g., 1,2,3 (for create)">
+                </div>
+                <div class="control-group">
+                    <button id="insert-value">Insert</button>
+                    <button id="delete-value">Delete</button>
+                </div>
+                <div class="control-group">
+                    <button id="access-value">Access</button>
+                    <button id="search-value">Search</button>
+                </div>
+                <div class="control-group">
+                    <button id="update-value">Update</button>
+                    <button id="clear-array">Clear Visual</button>
+                </div>
+                <div class="animation-controls">
+                    <button id="play-pause-animation">Play</button>
+                    <button id="step-animation">Step</button>
+                    <label for="animation-speed">Speed:</label>
+                    <input type="range" id="animation-speed" min="1" max="10" value="5">
+                </div>
+            </div>
+
+            <div class="visualization-area-container">
+                <h2>Array Visualization</h2>
+                <div id="array-container" class="visualization-area array-viz"></div>
+            </div>
+        </div>
+
+        <div class="panels">
+            <div class="info-panel operations-log">
+                <h3>Operations Log</h3>
+                <ul id="operations-list"></ul>
+            </div>
+
+            <div class="info-panel code-snippet">
+                <h3>Code Snippet</h3>
+                <select id="code-snippet-selector">
+                    <option value="create">Create/Initialize</option>
+                    <option value="insert">Insert</option>
+                    <option value="delete">Delete</option>
+                    <option value="access">Access</option>
+                    <option value="search">Search</option>
+                    <option value="update">Update</option>
+                </select>
+                <pre><code id="code-display" class="language-javascript">// Select an operation to see code</code></pre>
+            </div>
+        </div>
+
+        <div class="panels">
+            <div class="info-panel complexity-panel">
+                <script>
+                    const arrayComplexity = {
+                        access: { best: 'O(1)', average: 'O(1)', worst: 'O(1)' },
+                        search: { best: 'O(1)', average: 'O(n)', worst: 'O(n)' },
+                        insertion: { best: 'O(1) (at end, if space)', average: 'O(n)', worst: 'O(n)' },
+                        deletion: { best: 'O(1) (at end)', average: 'O(n)', worst: 'O(n)' }
+                    };
+                    document.currentScript.parentElement.appendChild(createComplexityPanel(arrayComplexity, 'Array Operations'));
+                </script>
+            </div>
+
+            <div class="info-panel applications-panel">
+                <h3>Applications of Arrays</h3>
+                <ul>
+                    <li>Storing collections of similar data types.</li>
+                    <li>Implementing other data structures (e.g., stacks, queues, hash tables).</li>
+                    <li>Used in various algorithms (e.g., sorting, searching, matrix operations).</li>
+                    <li>Representing tables or grids (e.g., spreadsheets, game boards).</li>
+                    <li>Buffer management in operating systems.</li>
+                </ul>
+            </div>
+        </div>
+
+        <script>
+            // Placeholder for array visualization script
+            document.addEventListener('DOMContentLoaded', () => {
+                // Initialize common components
+                const animationController = new AnimationController(
+                    document.getElementById('play-pause-animation'),
+                    document.getElementById('step-animation'),
+                    document.getElementById('animation-speed')
+                );
+
+                const operationsLog = document.getElementById('operations-list');
+                function logOperation(message) {
+                    const li = document.createElement('li');
+                    li.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                    operationsLog.insertBefore(li, operationsLog.firstChild);
+                    if (operationsLog.children.length > 10) { // Keep log concise
+                        operationsLog.removeChild(operationsLog.lastChild);
+                    }
+                }
+
+                // Code Snippets
+                const codeSnippets = {
+                    create: `// Create/Initialize an array\nconst arr = [1, 2, 3]; // Literal\nconst arr2 = new Array(5); // With size\nconst arr3 = Array.from({length: 5}, (_, i) => i + 1);`,
+                    insert: `// Insert element at a specific index\nfunction insertAt(arr, index, value) {\n  arr.splice(index, 0, value);\n}\n// Insert at end (push)\narr.push(newValue);`,
+                    delete: `// Delete element at a specific index\nfunction deleteAt(arr, index) {\n  arr.splice(index, 1);\n}\n// Delete from end (pop)\narr.pop();`,
+                    access: `// Access element by index\nconst element = arr[index];`,
+                    search: `// Search for an element (linear search)\nfunction linearSearch(arr, target) {\n  for (let i = 0; i < arr.length; i++) {\n    if (arr[i] === target) return i; // Found at index i\n  }\n  return -1; // Not found\n}`,
+                    update: `// Update element at a specific index\narr[index] = newValue;`
+                };
+                const codeSelector = document.getElementById('code-snippet-selector');
+                const codeDisplay = document.getElementById('code-display');
+                codeSelector.addEventListener('change', (event) => {
+                    codeDisplay.textContent = codeSnippets[event.target.value];
+                    if (typeof hljs !== 'undefined') { // If highlight.js is available
+                        hljs.highlightElement(codeDisplay);
+                    }
+                });
+                // Initial code display
+                codeDisplay.textContent = codeSnippets[codeSelector.value];
+                 if (typeof hljs !== 'undefined') { hljs.highlightElement(codeDisplay); }
+
+                logOperation('Array page loaded. Ready for operations.');
+
+                const arrayContainer = document.getElementById('array-container');
+                const valueInput = document.getElementById('array-value');
+                const indexInput = document.getElementById('array-index');
+                const initialValuesInput = document.getElementById('array-initial-values');
+
+                let visualArray = [];
+                let currentStepActions = [];
+
+                function renderArray() {
+                    arrayContainer.innerHTML = '';
+                    visualArray.forEach((value, i) => {
+                        const elementContainer = document.createElement('div');
+                        elementContainer.className = 'array-element-container';
+
+                        const elementDiv = document.createElement('div');
+                        elementDiv.className = 'array-element';
+                        elementDiv.textContent = value;
+                        elementDiv.dataset.index = i;
+                        
+                        const indexDiv = document.createElement('div');
+                        indexDiv.className = 'array-index';
+                        indexDiv.textContent = i;
+
+                        elementContainer.appendChild(elementDiv);
+                        elementContainer.appendChild(indexDiv);
+                        arrayContainer.appendChild(elementContainer);
+                    });
+                }
+
+                async function highlightElement(index, className = 'highlight-access', duration = 1000) {
+                    const elements = arrayContainer.querySelectorAll('.array-element');
+                    if (elements[index]) {
+                        elements[index].classList.add(className);
+                        await animationController.delay(duration);
+                        elements[index].classList.remove(className);
+                    }
+                }
+
+                document.getElementById('create-array').addEventListener('click', () => {
+                    const initialValues = initialValuesInput.value.trim();
+                    if (initialValues) {
+                        visualArray = initialValues.split(',').map(s => s.trim()).filter(s => s !== '');
+                    } else {
+                        visualArray = Array.from({ length: Math.floor(Math.random() * 5) + 3 }, (_, i) => Math.floor(Math.random() * 100));
+                    }
+                    renderArray();
+                    logOperation(`Array created/reset: [${visualArray.join(', ')}]`);
+                    initialValuesInput.value = '';
+                });
+
+                document.getElementById('insert-value').addEventListener('click', async () => {
+                    const value = valueInput.value.trim();
+                    let index = parseInt(indexInput.value);
+                    if (value === '') { logOperation('Error: Value cannot be empty for insert.'); return; }
+                    if (isNaN(index) || index < 0 || index > visualArray.length) {
+                        index = visualArray.length; // Default to inserting at the end
+                        logOperation(`Index invalid or not provided. Inserting '${value}' at end (index ${index}).`);
+                    } else {
+                        logOperation(`Inserting '${value}' at index ${index}.`);
+                    }
+
+                    visualArray.splice(index, 0, value);
+                    renderArray(); // Re-render to make space
+                    const elements = arrayContainer.querySelectorAll('.array-element');
+                    if (elements[index]) {
+                        elements[index].classList.add('new-element');
+                        await animationController.delay(500);
+                        elements[index].classList.remove('new-element');
+                    }
+                    valueInput.value = '';
+                    indexInput.value = '';
+                });
+
+                document.getElementById('delete-value').addEventListener('click', async () => {
+                    let index = parseInt(indexInput.value);
+                    if (isNaN(index) || index < 0 || index >= visualArray.length) {
+                        logOperation('Error: Index is invalid or out of bounds for delete.'); return;
+                    }
+                    logOperation(`Deleting element at index ${index} (value: ${visualArray[index]}).`);
+                    await highlightElement(index, 'highlight-delete', 500);
+                    visualArray.splice(index, 1);
+                    renderArray();
+                    indexInput.value = '';
+                });
+
+                document.getElementById('access-value').addEventListener('click', async () => {
+                    let index = parseInt(indexInput.value);
+                    if (isNaN(index) || index < 0 || index >= visualArray.length) {
+                        logOperation('Error: Index is invalid or out of bounds for access.'); return;
+                    }
+                    logOperation(`Accessing element at index ${index}. Value: ${visualArray[index]}`);
+                    await highlightElement(index, 'highlight-access', 1000);
+                    indexInput.value = '';
+                });
+
+                document.getElementById('search-value').addEventListener('click', async () => {
+                    const valueToSearch = valueInput.value.trim();
+                    if (valueToSearch === '') { logOperation('Error: Value cannot be empty for search.'); return; }
+                    logOperation(`Searching for value '${valueToSearch}'.`);
+                    let found = false;
+                    for (let i = 0; i < visualArray.length; i++) {
+                        await highlightElement(i, 'highlight-search', 300);
+                        if (visualArray[i] === valueToSearch) {
+                            logOperation(`Value '${valueToSearch}' found at index ${i}.`);
+                            await highlightElement(i, 'highlight-found', 1000);
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        logOperation(`Value '${valueToSearch}' not found in the array.`);
+                    }
+                    valueInput.value = '';
+                });
+
+                document.getElementById('update-value').addEventListener('click', async () => {
+                    const newValue = valueInput.value.trim();
+                    let index = parseInt(indexInput.value);
+                    if (newValue === '') { logOperation('Error: New value cannot be empty for update.'); return; }
+                    if (isNaN(index) || index < 0 || index >= visualArray.length) {
+                        logOperation('Error: Index is invalid or out of bounds for update.'); return;
+                    }
+                    logOperation(`Updating element at index ${index} from '${visualArray[index]}' to '${newValue}'.`);
+                    visualArray[index] = newValue;
+                    await highlightElement(index, 'highlight-update', 500);
+                    renderArray(); // Re-render to show new value
+                    valueInput.value = '';
+                    indexInput.value = '';
+                });
+
+                document.getElementById('clear-array').addEventListener('click', () => {
+                    visualArray = [];
+                    renderArray();
+                    logOperation('Array visualization cleared.');
+                });
+
+                // Initial render (empty or default)
+                renderArray();
+                logOperation('Array visualization initialized.');
+            });
+        </script>
+
+    </div>
+</body>
+</html>

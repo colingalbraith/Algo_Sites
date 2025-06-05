@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linked List Operations</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <script src="../js/common.js"></script>
+</head>
+<body>
+    <div class="container" id="app">
+        <script>
+            const navBar = createNavBar('Linked List');
+            document.getElementById('app').appendChild(navBar);
+            const breadcrumbs = createBreadcrumbs([
+                { name: 'Home', url: '../index.html' },
+                { name: 'Linked List Operations' }
+            ]);
+            document.getElementById('app').appendChild(breadcrumbs);
+        </script>
+        <div class="header">
+            <h1>🔗 Linked List Operations</h1>
+            <p>Visualize common linked list operations like insertion, deletion, and traversal.</p>
+        </div>
+                <div class="content-wrapper">
+            <div class="controls">
+                <h2>Controls</h2>
+                <div class="control-group">
+                    <input type="text" id="list-value" placeholder="Enter value">
+                    <input type="number" id="list-index" placeholder="Enter index (optional)">
+                </div>
+                <div class="control-group">
+                    <button id="create-list">Create/Reset</button>
+                    <input type="text" id="list-initial-values" placeholder="e.g., 1,2,3 (for create)">
+                </div>
+                <div class="control-group">
+                    <button id="insert-head">Insert Head</button>
+                    <button id="insert-tail">Insert Tail</button>
+                    <button id="insert-at">Insert At Index</button>
+                </div>
+                <div class="control-group">
+                    <button id="delete-head">Delete Head</button>
+                    <button id="delete-tail">Delete Tail</button>
+                    <button id="delete-at">Delete At Index</button>
+                </div>
+                <div class="control-group">
+                    <button id="search-value">Search Value</button>
+                    <button id="access-value">Access At Index</button>
+                </div>
+                 <div class="control-group">
+                    <button id="clear-list">Clear Visual</button>
+                </div>
+                <div class="animation-controls">
+                    <button id="play-pause-animation">Play</button>
+                    <button id="step-animation">Step</button>
+                    <label for="animation-speed">Speed:</label>
+                    <input type="range" id="animation-speed" min="1" max="10" value="5">
+                </div>
+            </div>
+
+            <div class="visualization-area-container">
+                <h2>Linked List Visualization</h2>
+                <div id="linked-list-container" class="visualization-area linked-list-viz"></div>
+            </div>
+        </div>
+
+        <div class="panels">
+            <div class="info-panel operations-log">
+                <h3>Operations Log</h3>
+                <ul id="operations-list"></ul>
+            </div>
+
+            <div class="info-panel code-snippet">
+                <h3>Code Snippet (Singly Linked List)</h3>
+                <select id="code-snippet-selector">
+                    <option value="node">Node Class</option>
+                    <option value="list">LinkedList Class</option>
+                    <option value="insertHead">Insert Head</option>
+                    <option value="insertTail">Insert Tail</option>
+                    <option value="insertAt">Insert At Index</option>
+                    <option value="deleteHead">Delete Head</option>
+                    <option value="deleteTail">Delete Tail</option>
+                    <option value="deleteAt">Delete At Index</option>
+                    <option value="search">Search</option>
+                    <option value="access">Access</option>
+                </select>
+                <pre><code id="code-display" class="language-javascript">// Select an operation to see code</code></pre>
+            </div>
+        </div>
+
+        <div class="panels">
+            <div class="info-panel complexity-panel">
+                <script>
+                    const linkedListComplexity = {
+                        access: { best: 'O(1) (head)', average: 'O(n)', worst: 'O(n)' },
+                        search: { best: 'O(1) (head)', average: 'O(n)', worst: 'O(n)' },
+                        insertion_head: { best: 'O(1)', average: 'O(1)', worst: 'O(1)' },
+                        insertion_tail: { best: 'O(1) (if tail ptr)', average: 'O(1) (if tail ptr)', worst: 'O(1) (if tail ptr)' },
+                        insertion_middle: { best: 'O(n)', average: 'O(n)', worst: 'O(n)' },
+                        deletion_head: { best: 'O(1)', average: 'O(1)', worst: 'O(1)' },
+                        deletion_tail: { best: 'O(n) (singly)', average: 'O(n) (singly)', worst: 'O(n) (singly)' },
+                        deletion_middle: { best: 'O(n)', average: 'O(n)', worst: 'O(n)' }
+                    };
+                    document.currentScript.parentElement.appendChild(createComplexityPanel(linkedListComplexity, 'Singly Linked List Operations'));
+                </script>
+            </div>
+
+            <div class="info-panel applications-panel">
+                <h3>Applications of Linked Lists</h3>
+                <ul>
+                    <li>Implementing stacks, queues, and other abstract data types.</li>
+                    <li>Managing dynamic memory allocation (e.g., free lists).</li>
+                    <li>Representing sparse matrices.</li>
+                    <li>Undo functionality in applications.</li>
+                    <li>Navigation systems (e.g., browser history).</li>
+                </ul>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const animationController = new AnimationController(
+                    document.getElementById('play-pause-animation'),
+                    document.getElementById('step-animation'),
+                    document.getElementById('animation-speed')
+                );
+                const operationsLog = document.getElementById('operations-list');
+                function logOperation(message) {
+                    const li = document.createElement('li');
+                    li.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                    operationsLog.insertBefore(li, operationsLog.firstChild);
+                    if (operationsLog.children.length > 10) { operationsLog.removeChild(operationsLog.lastChild); }
+                }
+
+                const codeSnippets = {
+                    node: 'class Node {\n  constructor(value) {\n    this.value = value;\n    this.next = null;\n  }\n}',
+                    list: 'class LinkedList {\n  constructor() {\n    this.head = null;\n    this.size = 0;\n  }\n  // ... methods ...\n}',
+                    insertHead: 'insertHead(value) {\n  const newNode = new Node(value);\n  newNode.next = this.head;\n  this.head = newNode;\n  this.size++;\n}',
+                    insertTail: 'insertTail(value) {\n  const newNode = new Node(value);\n  if (!this.head) {\n    this.head = newNode;\n  } else {\n    let current = this.head;\n    while (current.next) {\n      current = current.next;\n    }\n    current.next = newNode;\n  }\n  this.size++;\n}',
+                    insertAt: 'insertAt(value, index) {\n  if (index < 0 || index > this.size) return null;\n  if (index === 0) return this.insertHead(value);\n  const newNode = new Node(value);\n  let current = this.head, previous, count = 0;\n  while (count < index) {\n    previous = current;\n    current = current.next;\n    count++;\n  }\n  newNode.next = current;\n  previous.next = newNode;\n  this.size++;\n}',
+                    deleteHead: 'deleteHead() {\n  if (!this.head) return null;\n  const removedHead = this.head;\n  this.head = this.head.next;\n  this.size--;\n  return removedHead.value;\n}',
+                    deleteTail: 'deleteTail() {\n  if (!this.head) return null;\n  if (this.size === 1) { /* or !this.head.next */ \n    const value = this.head.value;\n    this.head = null;\n    this.size--;\n    return value;\n  }\n  let current = this.head, previous;\n  while (current.next) {\n    previous = current;\n    current = current.next;\n  }\n  previous.next = null;\n  this.size--;\n  return current.value;\n}',
+                    deleteAt: 'deleteAt(index) {\n  if (index < 0 || index >= this.size) return null;\n  if (index === 0) return this.deleteHead();\n  let current = this.head, previous, count = 0;\n  while (count < index) {\n    previous = current;\n    current = current.next;\n    count++;\n  }\n  previous.next = current.next;\n  this.size--;\n  return current.value;\n}',
+                    search: 'search(value) {\n  let current = this.head;\n  let index = 0;\n  while (current) {\n    if (current.value === value) return index;\n    current = current.next;\n    index++;\n  }\n  return -1; // Not found\n}',
+                    access: 'access(index) {\n  if (index < 0 || index >= this.size) return null;\n  let current = this.head;\n  let count = 0;\n  while (count < index) {\n    current = current.next;\n    count++;\n  }\n  return current.value;\n}'
+                };
+                const codeSelector = document.getElementById('code-snippet-selector');
+                const codeDisplay = document.getElementById('code-display');
+                codeSelector.addEventListener('change', (event) => {
+                    codeDisplay.textContent = codeSnippets[event.target.value];
+                    if (typeof hljs !== 'undefined') { hljs.highlightElement(codeDisplay); }
+                });
+                codeDisplay.textContent = codeSnippets[codeSelector.value];
+                if (typeof hljs !== 'undefined') { hljs.highlightElement(codeDisplay); }
+
+                logOperation('Linked List page loaded. Ready for operations.');
+                const listContainer = document.getElementById('linked-list-container');
+                const valueInput = document.getElementById('list-value');
+                const indexInput = document.getElementById('list-index');
+                const initialValuesInput = document.getElementById('list-initial-values');
+                const operationsList = document.getElementById('operations-list');
+                const animationSpeedInput = document.getElementById('animation-speed');
+
+                class Node {
+                    constructor(value) {
+                        this.value = value;
+                        this.next = null;
+                        this.element = null; // DOM element for the node itself, might be useful for animations
+                    }
+                }
+
+                class LinkedList {
+                    constructor() {
+                        this.head = null;
+                        this.tail = null; // Add tail pointer for O(1) append
+                        this.size = 0;
+                        this.animationDelay = 500; // Default animation speed
+                    }
+                    
+                    // Set animation speed (1-10 scale)
+                    setAnimationSpeed(speed) {
+                        this.animationDelay = 1100 - (speed * 100);
+                    }
+
+                    render(operationHighlightNodeParam) {
+                        const operationHighlightNode = operationHighlightNodeParam !== undefined ? operationHighlightNodeParam : null;
+                        listContainer.innerHTML = '';
+                        let current = this.head;
+
+                        if (!this.head) { // Empty list
+                            const emptyStateContainer = document.createElement('div');
+                            emptyStateContainer.className = 'll-empty-state'; // Use this class for specific empty styling if needed
+
+                            // HEAD -> NULL
+                            const headSegment = document.createElement('div');
+                            headSegment.className = 'll-node-container'; // Reuse for consistent spacing
+                            const headLabelWrapper = document.createElement('div');
+                            headLabelWrapper.className = 'll-node-wrapper'; // For pointer alignment
+                            const headLabel = document.createElement('div');
+                            headLabel.className = 'pointer-label head visible';
+                            headLabel.textContent = 'HEAD';
+                            headLabelWrapper.appendChild(headLabel);
+                            headSegment.appendChild(headLabelWrapper);
+                            const nullText1 = document.createElement('span');
+                            nullText1.className = 'll-null';
+                            nullText1.textContent = 'NULL';
+                            headSegment.appendChild(nullText1);
+                            emptyStateContainer.appendChild(headSegment);
+                            
+                            // TAIL -> NULL (separate for clarity, can be styled to appear next to HEAD -> NULL)
+                            const tailSegment = document.createElement('div');
+                            tailSegment.className = 'll-node-container'; // Reuse for consistent spacing
+                            const tailLabelWrapper = document.createElement('div');
+                            tailLabelWrapper.className = 'll-node-wrapper'; // For pointer alignment
+                            const tailLabel = document.createElement('div');
+                            tailLabel.className = 'pointer-label tail visible';
+                            tailLabel.textContent = 'TAIL';
+                            tailLabelWrapper.appendChild(tailLabel);
+                            tailSegment.appendChild(tailLabelWrapper);
+                            const nullText2 = document.createElement('span');
+                            nullText2.className = 'll-null';
+                            nullText2.textContent = 'NULL';
+                            tailSegment.appendChild(nullText2);
+                            emptyStateContainer.appendChild(tailSegment);
+
+                            listContainer.appendChild(emptyStateContainer);
+                            return;
+                        }
+
+                        while (current) {
+                            const nodeContainer = document.createElement('div');
+                            nodeContainer.className = 'll-node-container';
+
+                            const nodeWrapper = document.createElement('div');
+                            nodeWrapper.className = 'll-node-wrapper';
+
+                            // HEAD Pointer Label
+                            if (current === this.head) {
+                                const headLabel = document.createElement('div');
+                                headLabel.className = 'pointer-label head visible';
+                                headLabel.textContent = 'HEAD';
+                                if (this.head === this.tail) { // Single node list
+                                    headLabel.classList.add('tail-coincide');
+                                }
+                                nodeWrapper.appendChild(headLabel);
+                            }
+
+                            // TAIL Pointer Label
+                            if (current === this.tail) {
+                                const tailLabel = document.createElement('div');
+                                tailLabel.className = 'pointer-label tail visible';
+                                tailLabel.textContent = 'TAIL';
+                                if (this.head === this.tail) { // Single node list
+                                    tailLabel.classList.add('head-coincide');
+                                }
+                                nodeWrapper.appendChild(tailLabel);
+                            }
+
+                            // Current operation highlight Pointer Label
+                            if (current === operationHighlightNode) {
+                                const currentOpLabel = document.createElement('div');
+                                currentOpLabel.className = 'pointer-label current visible';
+                                currentOpLabel.textContent = 'current';
+                                nodeWrapper.appendChild(currentOpLabel);
+                            }
+
+                            const nodeDiv = document.createElement('div');
+                            nodeDiv.className = 'll-node';
+                            nodeDiv.textContent = current.value; // Display value directly
+                            current.element = nodeDiv; // Store ref for animations
+                            nodeWrapper.appendChild(nodeDiv);
+                            
+                            nodeContainer.appendChild(nodeWrapper);
+
+                            // Arrow to next node
+                            if (current.next) {
+                                const arrowSpan = document.createElement('span');
+                                arrowSpan.className = 'll-arrow';
+                                arrowSpan.innerHTML = '&rarr;'; // Right arrow HTML entity
+                                nodeContainer.appendChild(arrowSpan);
+                            }
+                            listContainer.appendChild(nodeContainer);
+
+                            // Scroll to the highlighted node
+                            if (current === operationHighlightNode && current.element) {
+                                setTimeout(() => {
+                                    current.element.scrollIntoView({
+                                        behavior: 'smooth',
+                                        block: 'nearest',
+                                        inline: 'center'
+                                    });
+                                }, this.animationDelay / 2); // Adjust delay as needed
+                            }
+                            current = current.next;
+                        }
+
+                        // Final NULL indicator at the end of the list (if list is not empty)
+                        if (this.head) {
+                            const finalNullSpan = document.createElement('span');
+                            finalNullSpan.className = 'll-null';
+                            finalNullSpan.textContent = 'NULL';
+                            listContainer.appendChild(finalNullSpan);
+                        }
+                    }
+
+                    async highlightNode(node, classNameParam, durationParam) {
+                        if (!node || !node.element) return;
+                        
+                        const resolvedClassName = classNameParam !== undefined ? classNameParam : 'highlight-access';
+                        const resolvedDuration = durationParam !== undefined && durationParam !== null ? durationParam : this.animationDelay;
+
+                        node.element.classList.add(resolvedClassName);
+                        await animationController.delay(resolvedDuration);
+                        
+                        // Only remove if still has the class (wasn't removed by another operation)
+                        if (node.element.classList.contains(resolvedClassName)) {
+                            node.element.classList.remove(resolvedClassName);
+                        }
+                    }
+                    
+                    async addNodeAnimation(node) {
+                        if (node && node.element) {
+                            node.element.classList.add('new-node');
+                            await animationController.delay(500); // Match animation duration
+                            node.element.classList.remove('new-node');
+                        }
+                    }
+
+                    // --- Core Operations with Animation Hooks ---
+                    async insertHead(value) {
+                        logOperation(`Inserting ${value} at head.`);
+                        const newNode = new Node(value);
+                        
+                        // Show the new node being created
+                        this.render();
+                        await animationController.delay(this.animationDelay / 2);
+                        
+                        // Visualize the connection
+                        if (this.head) {
+                            // Show new node connecting to current head
+                            newNode.next = this.head;
+                            this.head = newNode;
+                            this.render(this.head);
+                            await this.highlightNode(newNode, 'highlight-insert');
+                        } else {
+                            // First node in the list
+                            this.head = newNode;
+                            this.tail = newNode;
+                            this.render(this.head);
+                            await this.highlightNode(newNode, 'highlight-insert');
+                        }
+                        
+                        this.size++;
+                        await this.addNodeAnimation(newNode);
+                        
+                        // Final render to show all pointers
+                        this.render();
+                        return newNode;
+                    }
+
+                    async insertTail(value) {
+                        logOperation(`Inserting ${value} at tail.`);
+                        const newNode = new Node(value);
+                        
+                        if (!this.head) {
+                            this.head = newNode;
+                            this.tail = newNode;
+                        } else {
+                            // Visualize traversal to the end
+                            let current = this.head;
+                            while (current.next) {
+                                await this.highlightNode(current, 'highlight-search');
+                                current = current.next;
+                            }
+                            
+                            // Show connection animation
+                            await this.highlightNode(current, 'highlight-insert');
+                            current.next = newNode;
+                            this.tail = newNode;
+                            
+                            // Visualize the new connection
+                            this.render();
+                        }
+                        
+                        this.size++;
+                        await this.addNodeAnimation(newNode);
+                        return newNode;
+                    }
+
+                    async insertAt(value, index) {
+                        if (index < 0 || index > this.size) {
+                            logOperation(`Error: Index ${index} out of bounds.`); return null;
+                        }
+                        if (index === 0) return this.insertHead(value);
+                        if (index === this.size) return this.insertTail(value);
+
+                        logOperation(`Inserting ${value} at index ${index}.`);
+                        const newNode = new Node(value);
+                        let current = this.head, previous, count = 0;
+                        while (count < index) {
+                            await this.highlightNode(current, 'highlight-search');
+                            previous = current;
+                            current = current.next;
+                            count++;
+                        }
+                        await this.highlightNode(previous, 'highlight-insert');
+                        newNode.next = current;
+                        previous.next = newNode;
+                        this.size++;
+                        this.render();
+                        await this.addNodeAnimation(newNode);
+                    }
+
+                    async deleteHead() {
+                        if (!this.head) { logOperation('List is empty. Cannot delete head.'); return null; }
+                        logOperation(`Deleting head (value: ${this.head.value}).`);
+                        const removedNode = this.head;
+                        await this.highlightNode(removedNode, 'highlight-delete');
+                        this.head = this.head.next;
+                        this.size--;
+                        this.render();
+                        return removedNode.value;
+                    }
+
+                    async deleteTail() {
+                        if (!this.head) { logOperation('List is empty. Cannot delete tail.'); return null; }
+                        logOperation('Deleting tail.');
+                        if (!this.head.next) { // Only one node
+                            const value = this.head.value;
+                            await this.highlightNode(this.head, 'highlight-delete');
+                            this.head = null;
+                            this.size--;
+                            this.render();
+                            return value;
+                        }
+                        let current = this.head, previous;
+                        while (current.next) {
+                            await this.highlightNode(current, 'highlight-search');
+                            previous = current;
+                            current = current.next;
+                        }
+                        await this.highlightNode(current, 'highlight-delete');
+                        previous.next = null;
+                        this.size--;
+                        this.render();
+                        return current.value;
+                    }
+
+                    async deleteAt(index) {
+                        if (index < 0 || index >= this.size) {
+                            logOperation(`Error: Index ${index} out of bounds.`); return null;
+                        }
+                        if (index === 0) return this.deleteHead();
+                        logOperation(`Deleting node at index ${index}.`);
+                        let current = this.head, previous, count = 0;
+                        while (count < index) {
+                            await this.highlightNode(current, 'highlight-search');
+                            previous = current;
+                            current = current.next;
+                            count++;
+                        }
+                        await this.highlightNode(current, 'highlight-delete');
+                        previous.next = current.next;
+                        this.size--;
+                        this.render();
+                        return current.value;
+                    }
+
+                    async searchValue(value) {
+                        logOperation(`Searching for value ${value}.`);
+                        let current = this.head;
+                        let idx = 0;
+                        while (current) {
+                            await this.highlightNode(current, 'highlight-search');
+                            if (current.value === value) {
+                                logOperation(`Value ${value} found at index ${idx}.`);
+                                await this.highlightNode(current, 'highlight-found', 1000);
+                                return idx;
+                            }
+                            current = current.next;
+                            idx++;
+                        }
+                        logOperation(`Value ${value} not found.`);
+                        return -1;
+                    }
+
+                    async accessValue(index) {
+                        if (index < 0 || index >= this.size) {
+                            logOperation(`Error: Index ${index} out of bounds.`); return null;
+                        }
+                        logOperation(`Accessing value at index ${index}.`);
+                        const current = await this.traverseToIndex(index);
+                        logOperation(`Value at index ${index} is ${current.value}.`);
+                        return current.value;
+                    }
+
+                    async traverseToIndex(index) {
+                        if (index < 0 || index >= this.size) return null;
+                        let current = this.head;
+                        let count = 0;
+                        
+                        // Initial render with head pointer
+                        this.render(current);
+                        await animationController.delay(this.animationDelay);
+                        
+                        while (count < index) {
+                            await this.highlightNode(current, 'highlight-search');
+                            current = current.next;
+                            count++;
+                            
+                            // Update visualization to show current pointer position
+                            this.render(current);
+                            await animationController.delay(this.animationDelay / 2);
+                        }
+                        
+                        // Final highlight on the target node
+                        await this.highlightNode(current, 'highlight-access');
+                        this.render(current);
+                        
+                        return current;
+                    }
+                }
+
+                const list = new LinkedList();
+
+                document.getElementById('create-list').addEventListener('click', () => {
+                    const initialValues = initialValuesInput.value.trim();
+                    list.head = null; list.size = 0; // Clear existing list
+                    if (initialValues) {
+                        const values = initialValues.split(',').map(s => s.trim()).filter(s => s !== '');
+                        // Insert in reverse to maintain order for insertTail or build properly
+                        for (let i = values.length - 1; i >= 0; i--) {
+                            list.insertHead(values[i]); // Use non-async version for setup
+                        }
+                    } else { // Create a small random list
+                        const numNodes = Math.floor(Math.random() * 4) + 2;
+                        for (let i = 0; i < numNodes; i++) {
+                            list.insertTail(String(Math.floor(Math.random() * 100))); // Use non-async version for setup
+                        }
+                    }
+                    list.render();
+                    logOperation(`Linked list created/reset.`);
+                    initialValuesInput.value = '';
+                });
+
+                document.getElementById('insert-head').addEventListener('click', () => {
+                    const val = valueInput.value.trim();
+                    if (val === '') { logOperation('Error: Value cannot be empty.'); return; }
+                    list.insertHead(val);
+                    valueInput.value = '';
+                });
+
+                document.getElementById('insert-tail').addEventListener('click', () => {
+                    const val = valueInput.value.trim();
+                    if (val === '') { logOperation('Error: Value cannot be empty.'); return; }
+                    list.insertTail(val);
+                    valueInput.value = '';
+                });
+
+                document.getElementById('insert-at').addEventListener('click', () => {
+                    const val = valueInput.value.trim();
+                    const idx = parseInt(indexInput.value);
+                    if (val === '') { logOperation('Error: Value cannot be empty.'); return; }
+                    if (isNaN(idx)) { logOperation('Error: Index must be a number.'); return; }
+                    list.insertAt(val, idx);
+                    valueInput.value = ''; indexInput.value = '';
+                });
+
+                document.getElementById('delete-head').addEventListener('click', () => list.deleteHead());
+                document.getElementById('delete-tail').addEventListener('click', () => list.deleteTail());
+
+                document.getElementById('delete-at').addEventListener('click', () => {
+                    const idx = parseInt(indexInput.value);
+                    if (isNaN(idx)) { logOperation('Error: Index must be a number.'); return; }
+                    list.deleteAt(idx);
+                    indexInput.value = '';
+                });
+
+                document.getElementById('search-value').addEventListener('click', () => {
+                    const val = valueInput.value.trim();
+                    if (val === '') { logOperation('Error: Value cannot be empty for search.'); return; }
+                    list.searchValue(val);
+                    valueInput.value = '';
+                });
+
+                document.getElementById('access-value').addEventListener('click', () => {
+                    const idx = parseInt(indexInput.value);
+                    if (isNaN(idx)) { logOperation('Error: Index must be a number for access.'); return; }
+                    list.accessValue(idx);
+                    indexInput.value = '';
+                });
+
+                document.getElementById('clear-list').addEventListener('click', () => {
+                    list.head = null;
+                    list.size = 0;
+                    list.render();
+                    logOperation('Linked list visualization cleared.');
+                });
+
+                // Add event listeners for animation controls
+                const playPauseBtn = document.getElementById('play-pause-animation');
+                const stepBtn = document.getElementById('step-animation');
+                const speedControl = document.getElementById('animation-speed');
+                
+                if (playPauseBtn) {
+                    playPauseBtn.addEventListener('click', () => {
+                        const isPaused = animationController.togglePause();
+                        playPauseBtn.textContent = isPaused ? 'Resume' : 'Pause';
+                        if (stepBtn) stepBtn.disabled = !isPaused;
+                    });
+                }
+
+                if (stepBtn) {
+                    stepBtn.addEventListener('click', () => {
+                        if (animationController.isPaused()) {
+                            animationController.togglePause();
+                            setTimeout(() => animationController.togglePause(), 100);
+                        }
+                    });
+                }
+
+                if (speedControl) {
+                    speedControl.addEventListener('input', (e) => {
+                        const speed = parseInt(e.target.value);
+                        animationController.setSpeed(speed);
+                        list.setAnimationSpeed(speed);
+                    });
+                }
+            });
+        </script>
+
+                // Initial render
+                list.render();
+                logOperation('Linked list visualization initialized.');
+            });
+        </script>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shortest Path Algorithms</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <script src="../js/common.js"></script>
+</head>
+<body>
+    <div class="container" id="app">
+        <script>
+            const navBar = createNavBar('Shortest Path');
+            document.getElementById('app').appendChild(navBar);
+            const breadcrumbs = createBreadcrumbs([
+                { name: 'Home', url: '../index.html' },
+                { name: 'Shortest Path Algorithms' }
+            ]);
+            document.getElementById('app').appendChild(breadcrumbs);
+        </script>
+        <div class="header">
+            <h1>🗺️ Shortest Path Algorithms</h1>
+            <p>Visualize Dijkstra's and Bellman-Ford algorithms for finding shortest paths.</p>
+        </div>
+                <div class="content-wrapper">
+            <div class="controls">
+                <h2>Controls</h2>
+                <div class="control-group">
+                    <label for="sp-graph-type">Graph Type:</label>
+                    <select id="sp-graph-type">
+                        <option value="directed_weighted">Directed Weighted</option>
+                        <option value="undirected_weighted">Undirected Weighted</option>
+                        <!-- <option value="directed_unweighted">Directed Unweighted</option> -->
+                        <!-- <option value="undirected_unweighted">Undirected Unweighted</option> -->
+                    </select>
+                </div>
+                <div class="control-group">
+                    <button id="sp-generate-random-graph">Generate Random Graph</button>
+                    <button id="sp-clear-graph">Clear Graph</button>
+                </div>
+                <div class="control-group">
+                    <input type="text" id="sp-add-node-value" placeholder="Node (e.g., A)">
+                    <button id="sp-add-node">Add Node</button>
+                </div>
+                <div class="control-group">
+                    <input type="text" id="sp-edge-from" placeholder="From Node">
+                    <input type="text" id="sp-edge-to" placeholder="To Node">
+                    <input type="number" id="sp-edge-weight" placeholder="Weight" value="1" style="width:80px;">
+                    <button id="sp-add-edge">Add Edge</button>
+                </div>
+                <hr>
+                <div class="control-group">
+                    <label for="sp-start-node">Start Node:</label>
+                    <input type="text" id="sp-start-node" placeholder="Enter start node">
+                    <label for="sp-end-node">End Node (optional):</label>
+                    <input type="text" id="sp-end-node" placeholder="Enter end node">
+                </div>
+                <div class="control-group">
+                    <button id="run-dijkstra">Run Dijkstra</button>
+                    <button id="run-bellman-ford">Run Bellman-Ford</button>
+                </div>
+                <div class="animation-controls">
+                    <button id="play-pause-animation">Play</button>
+                    <button id="step-animation">Step</button>
+                    <label for="animation-speed">Speed:</label>
+                    <input type="range" id="animation-speed" min="1" max="10" value="5">
+                </div>
+            </div>
+
+            <div class="visualization-area-container">
+                <h2>Graph Visualization</h2>
+                <div id="sp-graph-visualization-area" class="visualization-area graph-viz"></div>
+                <div id="sp-output-area">
+                    <h3>Shortest Path Result:</h3>
+                    <p id="sp-path-display">Path: N/A</p>
+                    <p id="sp-distance-display">Total Distance: N/A</p>
+                    <h3>Distances from Start Node:</h3>
+                    <ul id="sp-distances-list"></ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="panels">
+            <div class="info-panel operations-log">
+                <h3>Operations Log</h3>
+                <ul id="operations-list"></ul>
+            </div>
+
+            <div class="info-panel code-snippet">
+                <h3>Code Snippet</h3>
+                <select id="code-snippet-selector">
+                    <option value="dijkstra">Dijkstra's Algorithm</option>
+                    <option value="bellman_ford">Bellman-Ford Algorithm</option>
+                </select>
+                <pre><code id="code-display" class="language-javascript">// Select an algorithm to see code</code></pre>
+            </div>
+        </div>
+
+        <div class="panels">
+            <div class="info-panel complexity-panel">
+                <script>
+                    const shortestPathComplexity = {
+                        dijkstra_adj_list_binary_heap: { algorithm: "Dijkstra's (Adj. List + Binary Heap)", time_worst: 'O((V + E) log V)', space_worst: 'O(V + E)'},
+                        dijkstra_adj_matrix_array: { algorithm: "Dijkstra's (Adj. Matrix + Array)", time_worst: 'O(V^2)', space_worst: 'O(V)'},
+                        bellman_ford: { algorithm: "Bellman-Ford", time_worst: 'O(V * E)', space_worst: 'O(V)'}
+                    };
+                    document.currentScript.parentElement.appendChild(createComplexityPanel(shortestPathComplexity, 'Shortest Path Algorithms'));
+                </script>
+            </div>
+
+            <div class="info-panel applications-panel">
+                <h3>Applications</h3>
+                <h4>Dijkstra's Algorithm:</h4>
+                <ul>
+                    <li>Network routing protocols (e.g., OSPF).</li>
+                    <li>Finding shortest paths in maps (e.g., GPS navigation).</li>
+                    <li>Flight itineraries.</li>
+                </ul>
+                <h4>Bellman-Ford Algorithm:</h4>
+                <ul>
+                    <li>Detecting negative weight cycles in graphs.</li>
+                    <li>Routing Information Protocol (RIP).</li>
+                    <li>Arbitrage detection in currency exchange.</li>
+                </ul>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const animationController = new AnimationController(
+                    document.getElementById('play-pause-animation'),
+                    document.getElementById('step-animation'),
+                    document.getElementById('animation-speed')
+                );
+                const operationsLog = document.getElementById('operations-list');
+                function logOperation(message) {
+                    const li = document.createElement('li');
+                    li.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                    operationsLog.insertBefore(li, operationsLog.firstChild);
+                    if (operationsLog.children.length > 20) { operationsLog.removeChild(operationsLog.lastChild); }
+                }
+
+                const codeSnippets = {
+                    dijkstra: 
+`function dijkstra(graph, startNode) {\n  const distances = {};\n  const prev = {};\n  const pq = new PriorityQueue(); // Min-priority queue\n\n  for (const node in graph) {\n    distances[node] = Infinity;\n    prev[node] = null;\n  }\n  distances[startNode] = 0;\n  pq.enqueue(startNode, 0);\n\n  while (!pq.isEmpty()) {\n    const { value: u, priority: distU } = pq.dequeue();\n\n    if (distU > distances[u]) continue; // Skip if a shorter path already found\n\n    for (const edge of graph[u]) {\n      const v = edge.neighbor;\n      const weight = edge.weight;\n      const alt = distances[u] + weight;\n      if (alt < distances[v]) {\n        distances[v] = alt;\n        prev[v] = u;\n        pq.enqueue(v, alt);\n      }\n    }\n  }\n  return { distances, prev };\n}\n// Note: PriorityQueue implementation not shown.`, 
+                    bellman_ford:
+`function bellmanFord(graph, startNode, numNodes) {\n  const distances = {};\n  const predecessors = {};\n\n  for (const node in graph) {\n    distances[node] = Infinity;\n    predecessors[node] = null;\n  }\n  distances[startNode] = 0;\n\n  // Relax edges repeatedly\n  for (let i = 0; i < numNodes - 1; i++) {\n    for (const u in graph) {\n      for (const edge of graph[u]) {\n        const v = edge.neighbor;\n        const weight = edge.weight;\n        if (distances[u] !== Infinity && distances[u] + weight < distances[v]) {\n          distances[v] = distances[u] + weight;\n          predecessors[v] = u;\n        }\n      }\n    }\n  }\n\n  // Check for negative-weight cycles\n  for (const u in graph) {\n    for (const edge of graph[u]) {\n      const v = edge.neighbor;\n      const weight = edge.weight;\n      if (distances[u] !== Infinity && distances[u] + weight < distances[v]) {\n        // Negative cycle detected\n        return { error: 'Negative weight cycle detected', distances, predecessors };\n      }\n    }\n  }\n  return { distances, predecessors };\n}`
+                };
+                const codeSelector = document.getElementById('code-snippet-selector');
+                const codeDisplay = document.getElementById('code-display');
+                codeSelector.addEventListener('change', (event) => {
+                    codeDisplay.textContent = codeSnippets[event.target.value];
+                    if (typeof hljs !== 'undefined') { hljs.highlightElement(codeDisplay); }
+                });
+                codeDisplay.textContent = codeSnippets[codeSelector.value];
+                if (typeof hljs !== 'undefined') { hljs.highlightElement(codeDisplay); }
+
+                logOperation('Shortest Path page loaded. Ready for operations.');
+                                const spGraphVizArea = document.getElementById('sp-graph-visualization-area');
+                const spPathDisplay = document.getElementById('sp-path-display');
+                const spDistanceDisplay = document.getElementById('sp-distance-display');
+                const spDistancesList = document.getElementById('sp-distances-list');
+
+                const spGraphTypeSelect = document.getElementById('sp-graph-type');
+                const spAddNodeInput = document.getElementById('sp-add-node-value');
+                const spEdgeFromInput = document.getElementById('sp-edge-from');
+                const spEdgeToInput = document.getElementById('sp-edge-to');
+                const spEdgeWeightInput = document.getElementById('sp-edge-weight');
+                const spStartNodeInput = document.getElementById('sp-start-node');
+                const spEndNodeInput = document.getElementById('sp-end-node');
+
+                // Basic Priority Queue for Dijkstra
+                class PriorityQueue {
+                    constructor() {
+                        this.elements = [];
+                    }
+                    enqueue(element, priority) {
+                        this.elements.push({ element, priority });
+                        this.elements.sort((a, b) => a.priority - b.priority);
+                    }
+                    dequeue() {
+                        if (this.isEmpty()) return null;
+                        return this.elements.shift();
+                    }
+                    isEmpty() {
+                        return this.elements.length === 0;
+                    }
+                }
+
+                class GraphVisualizationSP {
+                    constructor() {
+                        this.nodeMap = new Map(); // {id: {id, x, y, domElement, distElement}}
+                        this.edgeMap = new Map(); // {edgeId: {from, to, weight, domElement, weightElement}}
+                        this.adj = {}; // {nodeId: [{neighbor, weight}]}
+                        this.isDirected = true; // Default to directed for SP algos
+                        this.nodeRadius = 20;
+                        this.draggingNode = null;
+                        this.offsetX = 0;
+                        this.offsetY = 0;
+
+                        spGraphVizArea.addEventListener('mousedown', this.handleMouseDown.bind(this));
+                        spGraphVizArea.addEventListener('mousemove', this.handleMouseMove.bind(this));
+                        spGraphVizArea.addEventListener('mouseup', this.handleMouseUp.bind(this));
+                        spGraphVizArea.addEventListener('mouseleave', this.handleMouseUp.bind(this));
+                    }
+
+                    setGraphType(type) {
+                        // type can be 'directed_weighted' or 'undirected_weighted'
+                        this.isDirected = type.startsWith('directed');
+                        this.clearGraph(); // Clear and re-render if needed, or just update existing edges
+                        logOperation(`Graph type set to ${type}. Edges are now ${this.isDirected ? 'directed' : 'undirected'}.`);
+                        this.renderAllEdges();
+                    }
+
+                    addNode(id, x, y) {
+                        if (this.nodeMap.has(id)) {
+                            logOperation(`Node ${id} already exists.`); return;
+                        }
+                        const nodeElement = document.createElement('div');
+                        nodeElement.className = 'graph-node';
+                        nodeElement.textContent = id;
+                        nodeElement.dataset.id = id;
+
+                        const distElement = document.createElement('div');
+                        distElement.className = 'node-distance-label'; // New CSS class needed
+                        distElement.textContent = 'Dist: ∞'; // Infinity symbol
+                        nodeElement.appendChild(distElement);
+
+                        const vizWidth = spGraphVizArea.clientWidth;
+                        const vizHeight = spGraphVizArea.clientHeight;
+                        const posX = x || Math.random() * (vizWidth - 80) + 40;
+                        const posY = y || Math.random() * (vizHeight - 80) + 40;
+
+                        nodeElement.style.left = `${posX - this.nodeRadius}px`;
+                        nodeElement.style.top = `${posY - this.nodeRadius}px`;
+
+                        this.nodeMap.set(id, { id, x: posX, y: posY, domElement: nodeElement, distElement });
+                        this.adj[id] = this.adj[id] || [];
+                        spGraphVizArea.appendChild(nodeElement);
+                        logOperation(`Node ${id} added.`);
+                    }
+
+                    updateNodeDistanceLabel(nodeId, distance) {
+                        const node = this.nodeMap.get(nodeId);
+                        if (node && node.distElement) {
+                            node.distElement.textContent = `Dist: ${distance === Infinity ? '∞' : distance}`;
+                        }
+                    }
+
+                    addEdge(fromId, toId, weight) {
+                        if (!this.nodeMap.has(fromId) || !this.nodeMap.has(toId)) {
+                            logOperation(`Error: Nodes ${fromId} or ${toId} not found.`); return;
+                        }
+                        if (weight === null || isNaN(weight)) {
+                            logOperation(`Error: Edge weight must be a number.`); return;
+                        }
+                        weight = parseInt(weight);
+
+                        const edgeId = `${fromId}-${toId}`;
+                        const reverseEdgeId = `${toId}-${fromId}`;
+
+                        // Check for existing edge
+                        if (this.edgeMap.has(edgeId) || (!this.isDirected && this.edgeMap.has(reverseEdgeId))) {
+                            logOperation(`Edge between ${fromId} and ${toId} already exists.`); return;
+                        }
+
+                        this.adj[fromId] = this.adj[fromId] || [];
+                        this.adj[fromId].push({ neighbor: toId, weight });
+                        if (!this.isDirected) {
+                            this.adj[toId] = this.adj[toId] || [];
+                            this.adj[toId].push({ neighbor: fromId, weight });
+                        }
+                        this.renderEdge(fromId, toId, weight);
+                        logOperation(`Edge ${fromId} ${this.isDirected ? '→' : '↔'} ${toId} (weight: ${weight}) added.`);
+                    }
+
+                    renderEdge(fromId, toId, weight) {
+                        const fromNode = this.nodeMap.get(fromId);
+                        const toNode = this.nodeMap.get(toId);
+                        if (!fromNode || !toNode) return;
+
+                        const edgeElement = document.createElement('div');
+                        edgeElement.className = 'graph-edge';
+                        if (this.isDirected) edgeElement.classList.add('directed');
+                        
+                        const edgeKey = this.isDirected ? `${fromId}-${toId}` : ([fromId, toId].sort().join('-'));
+                        
+                        spGraphVizArea.appendChild(edgeElement);
+                        this.updateEdgeElementStyle(edgeElement, fromNode, toNode);
+
+                        let weightElement = null;
+                        if (weight !== null) {
+                            weightElement = document.createElement('div');
+                            weightElement.className = 'edge-weight';
+                            weightElement.textContent = weight;
+                            spGraphVizArea.appendChild(weightElement);
+                            this.updateWeightElementPosition(weightElement, fromNode, toNode);
+                        }
+                        this.edgeMap.set(edgeKey, { from: fromId, to: toId, weight, domElement: edgeElement, weightElement });
+                    }
+                    
+                    renderAllEdges() {
+                        this.edgeMap.forEach(edge => {
+                            if (edge.domElement) edge.domElement.remove();
+                            if (edge.weightElement) edge.weightElement.remove();
+                        });
+                        this.edgeMap.clear();
+
+                        const drawnEdges = new Set();
+                        for (const nodeId in this.adj) {
+                            this.adj[nodeId].forEach(edgeInfo => {
+                                const edgeKey = this.isDirected ? `${nodeId}-${edgeInfo.neighbor}` : ([nodeId, edgeInfo.neighbor].sort().join('-'));
+                                if (drawnEdges.has(edgeKey)) return;
+
+                                this.renderEdge(nodeId, edgeInfo.neighbor, edgeInfo.weight);
+                                drawnEdges.add(edgeKey);
+                            });
+                        }
+                    }
+
+                    updateEdgeElementStyle(edgeElement, fromNode, toNode) {
+                        const dx = toNode.x - fromNode.x;
+                        const dy = toNode.y - fromNode.y;
+                        const length = Math.sqrt(dx * dx + dy * dy);
+                        const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+                        edgeElement.style.width = `${length}px`;
+                        edgeElement.style.left = `${fromNode.x}px`;
+                        edgeElement.style.top = `${fromNode.y - edgeElement.offsetHeight / 2}px`;
+                        edgeElement.style.transform = `rotate(${angle}deg)`;
+                    }
+
+                    updateWeightElementPosition(weightElement, fromNode, toNode) {
+                        if (!weightElement) return;
+                        weightElement.style.left = `${(fromNode.x + toNode.x) / 2}px`;
+                        weightElement.style.top = `${(fromNode.y + toNode.y) / 2}px`;
+                    }
+
+                    clearGraph() {
+                        this.nodeMap.forEach(node => node.domElement.remove());
+                        this.edgeMap.forEach(edge => {
+                            if (edge.domElement) edge.domElement.remove();
+                            if (edge.weightElement) edge.weightElement.remove();
+                        });
+                        this.nodeMap.clear();
+                        this.edgeMap.clear();
+                        this.adj = {};
+                        this.resetDisplays();
+                        logOperation('Graph cleared.');
+                    }
+
+                    resetDisplays() {
+                        spPathDisplay.textContent = 'Path: N/A';
+                        spDistanceDisplay.textContent = 'Total Distance: N/A';
+                        spDistancesList.innerHTML = '';
+                        this.nodeMap.forEach(node => this.updateNodeDistanceLabel(node.id, Infinity));
+                    }
+
+                    generateRandomGraph(numNodes = 5, numEdges = 7) {
+                        this.clearGraph();
+                        const nodeIds = [];
+                        for (let i = 0; i < numNodes; i++) {
+                            const id = String.fromCharCode(65 + i); // A, B, C...
+                            nodeIds.push(id);
+                            this.addNode(id);
+                        }
+                        for (let i = 0; i < numEdges; i++) {
+                            let from = nodeIds[Math.floor(Math.random() * numNodes)];
+                            let to = nodeIds[Math.floor(Math.random() * numNodes)];
+                            if (from === to) { i--; continue; } // Avoid self-loops
+                            
+                            const weight = Math.floor(Math.random() * 10) + 1; // Positive weights for Dijkstra
+                            
+                            // Check if edge already exists to avoid duplicates
+                            const edgeKey = this.isDirected ? `${from}-${to}` : ([from,to].sort().join('-'));
+                            if (this.edgeMap.has(edgeKey)) { i--; continue; }
+
+                            this.addEdge(from, to, weight);
+                        }
+                        logOperation(`Generated random graph (${numNodes} nodes, ~${numEdges} edges).`);
+                    }
+                    
+                    resetNodeAndEdgeStyles() {
+                        this.nodeMap.forEach(node => {
+                            node.domElement.className = 'graph-node'; // Reset to base class
+                            this.updateNodeDistanceLabel(node.id, Infinity);
+                        });
+                        this.edgeMap.forEach(edge => {
+                            edge.domElement.className = 'graph-edge';
+                            if (this.isDirected) edge.domElement.classList.add('directed');
+                        });
+                        this.resetDisplays();
+                    }
+
+                    async highlightNode(nodeId, className, duration = animationController.getDelay()) {
+                        const node = this.nodeMap.get(nodeId);
+                        if (node && node.domElement) {
+                            node.domElement.classList.add(className);
+                            await animationController.delay(duration);
+                            if (className !== 'visited' && className !== 'path' && className !== 'start-node') {
+                                node.domElement.classList.remove(className);
+                            }
+                        }
+                    }
+
+                    async highlightEdge(fromId, toId, className, duration = animationController.getDelay()) {
+                        const edgeKey = this.isDirected ? `${fromId}-${toId}` : ([fromId, toId].sort().join('-'));
+                        const edge = this.edgeMap.get(edgeKey);
+                        if (edge && edge.domElement) {
+                            edge.domElement.classList.add(className);
+                            await animationController.delay(duration);
+                            if (className !== 'path') {
+                                edge.domElement.classList.remove(className);
+                                 // Ensure 'directed' class is preserved if it was there
+                                if (this.isDirected && !edge.domElement.classList.contains('directed')) {
+                                    edge.domElement.classList.add('directed');
+                                }
+                            }
+                        }
+                    }
+
+                    async dijkstra(startNodeId, endNodeId = null) {
+                        if (!this.nodeMap.has(startNodeId)) {
+                            logOperation(`Error: Start node ${startNodeId} not found.`); return;
+                        }
+                        if (endNodeId && !this.nodeMap.has(endNodeId)) {
+                            logOperation(`Error: End node ${endNodeId} not found.`); return;
+                        }
+
+                        this.resetNodeAndEdgeStyles();
+                        logOperation(`Starting Dijkstra's from ${startNodeId}` + (endNodeId ? ` to ${endNodeId}` : ''));
+                        this.nodeMap.get(startNodeId).domElement.classList.add('start-node');
+
+                        const distances = {};
+                        const predecessors = {};
+                        const pq = new PriorityQueue();
+
+                        this.nodeMap.forEach(node => {
+                            distances[node.id] = Infinity;
+                            predecessors[node.id] = null;
+                        });
+                        distances[startNodeId] = 0;
+                        this.updateNodeDistanceLabel(startNodeId, 0);
+                        pq.enqueue(startNodeId, 0);
+
+                        while (!pq.isEmpty()) {
+                            await animationController.checkPlayPause();
+                            const { element: u, priority: distU } = pq.dequeue();
+
+                            if (distU > distances[u]) continue; // Already found shorter path
+
+                            await this.highlightNode(u, 'current');
+                            this.nodeMap.get(u).domElement.classList.add('visited');
+
+                            if (u === endNodeId) {
+                                logOperation(`Reached end node ${endNodeId}.`);
+                                break; // Found shortest path to specific end node
+                            }
+
+                            const neighbors = this.adj[u] || [];
+                            for (const edge of neighbors) {
+                                const v = edge.neighbor;
+                                const weight = edge.weight;
+                                if (distances[u] + weight < distances[v]) {
+                                    distances[v] = distances[u] + weight;
+                                    predecessors[v] = u;
+                                    this.updateNodeDistanceLabel(v, distances[v]);
+                                    pq.enqueue(v, distances[v]);
+                                    await this.highlightEdge(u, v, 'highlight');
+                                    this.nodeMap.get(v).domElement.classList.add('tentative'); // Mark as tentatively reached
+                                }
+                            }
+                            await this.highlightNode(u, 'current'); // Remove current highlight unless it's start/end
+                             if(u !== startNodeId && u !== endNodeId) this.nodeMap.get(u).domElement.classList.remove('tentative');
+                        }
+
+                        // Display all distances
+                        spDistancesList.innerHTML = '';
+                        this.nodeMap.forEach(node => {
+                            const li = document.createElement('li');
+                            li.textContent = `Node ${node.id}: ${distances[node.id] === Infinity ? '∞' : distances[node.id]}`;
+                            spDistancesList.appendChild(li);
+                        });
+
+                        // Reconstruct and display path if endNodeId is specified
+                        if (endNodeId && distances[endNodeId] !== Infinity) {
+                            let path = [];
+                            let curr = endNodeId;
+                            while (curr !== null) {
+                                path.unshift(curr);
+                                if (predecessors[curr] !== null) {
+                                   await this.highlightEdge(predecessors[curr], curr, 'path', 0); // Highlight final path edge
+                                   this.nodeMap.get(curr).domElement.classList.add('path');
+                                }
+                                curr = predecessors[curr];
+                            }
+                            this.nodeMap.get(startNodeId).domElement.classList.add('path'); // Start node is part of path
+                            spPathDisplay.textContent = `Path: ${path.join(' → ')}`;
+                            spDistanceDisplay.textContent = `Total Distance: ${distances[endNodeId]}`;
+                            logOperation(`Dijkstra's complete. Path to ${endNodeId}: ${path.join(' → ')}, Distance: ${distances[endNodeId]}`);
+                        } else if (endNodeId) {
+                            spPathDisplay.textContent = `Path: No path found to ${endNodeId}`;
+                            spDistanceDisplay.textContent = `Total Distance: N/A`;
+                            logOperation(`Dijkstra's complete. No path found to ${endNodeId}.`);
+                        } else {
+                            logOperation(`Dijkstra's complete. Calculated distances from ${startNodeId}.`);
+                        }
+                    }
+                    
+async bellmanFord(startNodeId, endNodeId = null) {
+                        if (!this.nodeMap.has(startNodeId)) {
+                            logOperation(`Error: Start node ${startNodeId} not found.`); return;
+                        }
+                        if (endNodeId && !this.nodeMap.has(endNodeId)) {
+                            logOperation(`Error: End node ${endNodeId} not found.`); return;
+                        }
+
+                        this.resetNodeAndEdgeStyles();
+                        logOperation(`Starting Bellman-Ford from ${startNodeId}` + (endNodeId ? ` to ${endNodeId}` : ''));
+                        this.nodeMap.get(startNodeId).domElement.classList.add('start-node');
+
+                        const distances = {};
+                        const predecessors = {};
+                        const nodeIds = Array.from(this.nodeMap.keys());
+                        const numNodes = nodeIds.length;
+
+                        nodeIds.forEach(nodeId => {
+                            distances[nodeId] = Infinity;
+                            predecessors[nodeId] = null;
+                        });
+                        distances[startNodeId] = 0;
+                        this.updateNodeDistanceLabel(startNodeId, 0);
+
+                        // Step 1: Relax edges repeatedly (V-1 times)
+                        for (let i = 0; i < numNodes - 1; i++) {
+                            logOperation(`Bellman-Ford: Iteration ${i + 1}/${numNodes -1}`);
+                            let relaxedThisIteration = false;
+                            for (const u of nodeIds) {
+                                if (distances[u] === Infinity) continue;
+                                const neighbors = this.adj[u] || [];
+                                for (const edge of neighbors) {
+                                    await animationController.checkPlayPause();
+                                    const v = edge.neighbor;
+                                    const weight = edge.weight;
+                                    await this.highlightEdge(u, v, 'highlight', animationController.getDelay() / 2);
+                                    if (distances[u] + weight < distances[v]) {
+                                        distances[v] = distances[u] + weight;
+                                        predecessors[v] = u;
+                                        this.updateNodeDistanceLabel(v, distances[v]);
+                                        await this.highlightNode(v, 'tentative', animationController.getDelay() / 2);
+                                        relaxedThisIteration = true;
+                                    }
+                                }
+                            }
+                            if (!relaxedThisIteration && i < numNodes - 2) { // Optimization: if no relaxations in an iteration, done.
+                                logOperation(`Bellman-Ford: No distances updated in iteration ${i + 1}. Early exit.`);
+                                break;
+                            }
+                        }
+
+                        // Step 2: Check for negative-weight cycles
+                        logOperation('Bellman-Ford: Checking for negative weight cycles...');
+                        let negativeCycleDetected = false;
+                        for (const u of nodeIds) {
+                            if (distances[u] === Infinity) continue;
+                            const neighbors = this.adj[u] || [];
+                            for (const edge of neighbors) {
+                                await animationController.checkPlayPause();
+                                const v = edge.neighbor;
+                                const weight = edge.weight;
+                                if (distances[u] + weight < distances[v]) {
+                                    negativeCycleDetected = true;
+                                    logOperation(`Error: Negative weight cycle detected involving edge ${u} → ${v}.`);
+                                    // Highlight the edge part of a negative cycle
+                                    await this.highlightEdge(u, v, 'error', animationController.getDelay() * 2);
+                                    // Mark nodes in cycle if possible (more complex, for now just log)
+                                    // distances[v] = -Infinity; // Mark nodes reachable via negative cycle
+                                    break;
+                                }
+                            }
+                            if (negativeCycleDetected) break;
+                        }
+
+                        if (negativeCycleDetected) {
+                            spPathDisplay.textContent = 'Path: N/A (Negative Cycle Detected)';
+                            spDistanceDisplay.textContent = 'Total Distance: N/A';
+                            spDistancesList.innerHTML = '<li>Negative weight cycle detected. Distances may be unreliable.</li>';
+                            return;
+                        }
+
+                        // Display all distances
+                        spDistancesList.innerHTML = '';
+                        this.nodeMap.forEach(node => {
+                            const li = document.createElement('li');
+                            li.textContent = `Node ${node.id}: ${distances[node.id] === Infinity ? '\u221E' : distances[node.id]}`;
+                            spDistancesList.appendChild(li);
+                        });
+
+                        // Reconstruct and display path if endNodeId is specified
+                        if (endNodeId && distances[endNodeId] !== Infinity) {
+                            let path = [];
+                            let curr = endNodeId;
+                            // Check if endNodeId is part of a path constructible from predecessors
+                            // This check is a bit tricky if negative cycles not affecting the direct path exist
+                            // but Bellman-Ford should have settled predecessors correctly if no neg cycle on path.
+                            let pathPossible = true;
+                            let tempCurr = endNodeId;
+                            const visitedInPathReconstruction = new Set(); // To detect cycle in predecessor path itself
+
+                            while (tempCurr !== null && tempCurr !== startNodeId) {
+                                if (visitedInPathReconstruction.has(tempCurr)) {
+                                    pathPossible = false; // Cycle in predecessor chain not leading to start
+                                    logOperation(`Path reconstruction to ${endNodeId} failed (cycle in predecessors).`);
+                                    break;
+                                }
+                                visitedInPathReconstruction.add(tempCurr);
+                                tempCurr = predecessors[tempCurr];
+                            }
+                            if (tempCurr === null && startNodeId !== endNodeId) pathPossible = false; // Did not reach start node
+
+                            if (pathPossible) {
+                                curr = endNodeId;
+                                while (curr !== null) {
+                                    path.unshift(curr);
+                                    if (predecessors[curr] !== null) {
+                                        await this.highlightEdge(predecessors[curr], curr, 'path', 0);
+                                        this.nodeMap.get(curr).domElement.classList.add('path');
+                                    }
+                                    curr = predecessors[curr];
+                                }
+                                this.nodeMap.get(startNodeId).domElement.classList.add('path');
+                                spPathDisplay.textContent = `Path: ${path.join(' \u2192 ')}`;
+                                spDistanceDisplay.textContent = `Total Distance: ${distances[endNodeId]}`;
+                                logOperation(`Bellman-Ford complete. Path to ${endNodeId}: ${path.join(' \u2192 ')}, Distance: ${distances[endNodeId]}`);
+                            } else {
+                                spPathDisplay.textContent = `Path: No valid path to ${endNodeId}`;
+                                spDistanceDisplay.textContent = `Total Distance: N/A`;
+                                logOperation(`Bellman-Ford complete. No valid path found to ${endNodeId}.`);
+                            }
+
+                        } else if (endNodeId) {
+                            spPathDisplay.textContent = `Path: No path found to ${endNodeId}`;
+                            spDistanceDisplay.textContent = `Total Distance: N/A`;
+                            logOperation(`Bellman-Ford complete. No path found to ${endNodeId}.`);
+                        } else {
+                            logOperation(`Bellman-Ford complete. Calculated distances from ${startNodeId}.`);
+                        }
+                    }
+
+                    // --- Dragging Logic (similar to GraphTraversal) ---
+                    handleMouseDown(event) {
+                        if (event.target.classList.contains('graph-node') || event.target.parentElement.classList.contains('graph-node')) {
+                            this.draggingNode = event.target.classList.contains('graph-node') ? event.target : event.target.parentElement;
+                            const nodeId = this.draggingNode.dataset.id;
+                            const node = this.nodeMap.get(nodeId);
+                            const rect = this.draggingNode.getBoundingClientRect();
+                            const vizRect = spGraphVizArea.getBoundingClientRect();
+                            this.offsetX = event.clientX - rect.left + vizRect.left;
+                            this.offsetY = event.clientY - rect.top + vizRect.top;
+                            this.draggingNode.style.cursor = 'grabbing';
+                        }
+                    }
+                    handleMouseMove(event) {
+                        if (this.draggingNode) {
+                            event.preventDefault();
+                            const nodeId = this.draggingNode.dataset.id;
+                            const node = this.nodeMap.get(nodeId);
+                            const vizRect = spGraphVizArea.getBoundingClientRect();
+                            let newX = event.clientX - this.offsetX + this.nodeRadius;
+                            let newY = event.clientY - this.offsetY + this.nodeRadius;
+
+                            newX = Math.max(this.nodeRadius, Math.min(newX, vizRect.width - this.nodeRadius));
+                            newY = Math.max(this.nodeRadius, Math.min(newY, vizRect.height - this.nodeRadius));
+
+                            node.x = newX;
+                            node.y = newY;
+                            this.draggingNode.style.left = `${newX - this.nodeRadius}px`;
+                            this.draggingNode.style.top = `${newY - this.nodeRadius}px`;
+                            this.updateConnectedEdges(nodeId);
+                        }
+                    }
+                    handleMouseUp() {
+                        if (this.draggingNode) {
+                            this.draggingNode.style.cursor = 'grab';
+                            this.draggingNode = null;
+                        }
+                    }
+                    updateConnectedEdges(nodeId) {
+                        this.edgeMap.forEach(edge => {
+                            if (edge.from === nodeId || edge.to === nodeId) {
+                                const fromNode = this.nodeMap.get(edge.from);
+                                const toNode = this.nodeMap.get(edge.to);
+                                this.updateEdgeElementStyle(edge.domElement, fromNode, toNode);
+                                this.updateWeightElementPosition(edge.weightElement, fromNode, toNode);
+                            }
+                        });
+                    }
+                }
+
+                const graphSP = new GraphVisualizationSP();
+
+                // Event Listeners
+                spGraphTypeSelect.addEventListener('change', (e) => graphSP.setGraphType(e.target.value));
+                document.getElementById('sp-generate-random-graph').addEventListener('click', () => graphSP.generateRandomGraph());
+                document.getElementById('sp-clear-graph').addEventListener('click', () => graphSP.clearGraph());
+
+                document.getElementById('sp-add-node').addEventListener('click', () => {
+                    const val = spAddNodeInput.value.trim().toUpperCase();
+                    if (val) { graphSP.addNode(val); spAddNodeInput.value = ''; }
+                    else { logOperation('Node ID cannot be empty.'); }
+                });
+
+                document.getElementById('sp-add-edge').addEventListener('click', () => {
+                    const from = spEdgeFromInput.value.trim().toUpperCase();
+                    const to = spEdgeToInput.value.trim().toUpperCase();
+                    const weight = parseInt(spEdgeWeightInput.value.trim());
+                    if (from && to && !isNaN(weight)) {
+                        if (from === to) { logOperation('Self-loops not typically used in simple shortest path examples here.'); return; }
+                        graphSP.addEdge(from, to, weight);
+                        spEdgeFromInput.value = ''; spEdgeToInput.value = ''; spEdgeWeightInput.value = '1';
+                    } else {
+                        logOperation('From, To, and valid Weight needed for edge.');
+                    }
+                });
+
+                document.getElementById('run-dijkstra').addEventListener('click', () => {
+                    const startNode = spStartNodeInput.value.trim().toUpperCase();
+                    const endNode = spEndNodeInput.value.trim().toUpperCase() || null;
+                    if (startNode) { graphSP.dijkstra(startNode, endNode); }
+                    else { logOperation('Start node is required for Dijkstra.'); }
+                });
+                
+                document.getElementById('run-bellman-ford').addEventListener('click', () => {
+                    const startNode = spStartNodeInput.value.trim().toUpperCase();
+                    const endNode = spEndNodeInput.value.trim().toUpperCase() || null;
+                    if (startNode) { graphSP.bellmanFord(startNode, endNode); }
+                    else { logOperation('Start node is required for Bellman-Ford.'); }
+                });
+
+                // Initial setup
+                graphSP.setGraphType(spGraphTypeSelect.value);
+                graphSP.generateRandomGraph(5, 6);
+                logOperation('Shortest Path visualization initialized.');
+
+            });
+        </script>
+
+    </div>
+</body>
+</html>

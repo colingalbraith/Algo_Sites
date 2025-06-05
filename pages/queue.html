@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Queue Visualization</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <script src="../js/common.js"></script>
+    <style>
+        .queue-container {
+            min-height: 400px;
+        }
+        
+        .queue-visualization {
+            height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            position: relative;
+            overflow-x: auto;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .queue-item {
+            width: 60px;
+            height: 60px;
+            margin-right: 10px;
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-weight: bold;
+            position: relative;
+            transition: all 0.5s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+        
+        .queue-item.highlighted {
+            background: linear-gradient(135deg, #ff6b6b, #ff8e8e);
+            transform: scale(1.05);
+            z-index: 10;
+        }
+        
+        .queue-pointers {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            padding: 0 20px;
+        }
+        
+        .queue-pointer {
+            background: rgba(78, 205, 196, 0.2);
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="app">
+        <script>
+            // Add navigation elements
+            const navBar = createNavBar('Queue');
+            document.getElementById('app').appendChild(navBar);
+            
+            const breadcrumbs = createBreadcrumbs([
+                { name: 'Home', url: '../index.html' },
+                { name: 'Queue Visualization' }
+            ]);
+            document.getElementById('app').appendChild(breadcrumbs);
+        </script>
+        
+        <div class="header">
+            <h1>🚶‍♂️ Queue Visualization</h1>
+            <p>Interactive visualization of FIFO (First In, First Out) data structure</p>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <input type="text" id="queueInput" placeholder="Enter value to enqueue" style="padding: 10px; border-radius: 20px; border: 2px solid #e9ecef; width: 200px;">
+                <button id="enqueueBtn">➕ Enqueue</button>
+                <button id="dequeueBtn">➖ Dequeue</button>
+                <button id="peekBtn">👁️ Peek</button>
+                <button id="clearBtn">🗑️ Clear</button>
+            </div>
+        </div>
+        
+        <div class="visualization-area">
+            <div class="stack-container">
+                <h2>Queue Visualization</h2>
+                <div class="queue-visualization" id="queueVis"></div>
+                <div class="queue-pointers">
+                    <span class="queue-pointer" id="frontPointer">Front: None</span>
+                    <span class="queue-pointer" id="rearPointer">Rear: None</span>
+                </div>
+                <div class="stats">
+                    <span id="queueSize">Size: 0</span> | 
+                    <span id="queueEmpty">Empty: Yes</span>
+                </div>
+            </div>
+            
+            <div class="representation-container">
+                <div class="list-container">
+                    <h3>Queue Operations Log</h3>
+                    <div id="operationsLog" style="max-height: 300px; overflow-y: auto;"></div>
+                </div>
+                
+                <div class="list-container">
+                    <h3>Queue Implementation</h3>
+                    <pre style="margin: 0; font-size: 14px; overflow-x: auto;">
+class Queue {
+    constructor() {
+        this.items = [];
+    }
+    
+    enqueue(element) {
+        this.items.push(element);
+        return element;
+    }
+    
+    dequeue() {
+        if (this.isEmpty()) return "Underflow";
+        return this.items.shift();
+    }
+    
+    front() {
+        if (this.isEmpty()) return "Queue Empty";
+        return this.items[0];
+    }
+    
+    rear() {
+        if (this.isEmpty()) return "Queue Empty";
+        return this.items[this.items.length - 1];
+    }
+    
+    isEmpty() {
+        return this.items.length === 0;
+    }
+    
+    size() {
+        return this.items.length;
+    }
+    
+    clear() {
+        this.items = [];
+    }
+}
+                    </pre>
+                </div>
+            </div>
+        </div>
+        
+        <div class="complexity-panel">
+            <h2 style="text-align: center; margin-bottom: 20px;">Queue Operations & Applications</h2>
+            <div class="complexity-grid">
+                <div class="complexity-card">
+                    <h3>Time Complexity</h3>
+                    <div class="complexity-metric">
+                        <strong>Enqueue:</strong> O(1)
+                    </div>
+                    <div class="complexity-metric">
+                        <strong>Dequeue:</strong> O(1) [amortized]
+                    </div>
+                    <div class="complexity-metric">
+                        <strong>Peek:</strong> O(1)
+                    </div>
+                    <div class="complexity-metric">
+                        <strong>Search:</strong> O(n)
+                    </div>
+                </div>
+                
+                <div class="complexity-card">
+                    <h3>Applications</h3>
+                    <div class="complexity-metric">
+                        <strong>CPU Scheduling:</strong> Managing processes waiting for CPU time
+                    </div>
+                    <div class="complexity-metric">
+                        <strong>BFS Algorithm:</strong> Breadth-First Search traversal in graphs
+                    </div>
+                    <div class="complexity-metric">
+                        <strong>Print Spooling:</strong> Managing print jobs in order of arrival
+                    </div>
+                </div>
+                
+                <div class="complexity-card">
+                    <h3>Real-world Examples</h3>
+                    <div class="complexity-metric">
+                        <strong>Customer Service:</strong> Call center queues and ticket systems
+                    </div>
+                    <div class="complexity-metric">
+                        <strong>Traffic Management:</strong> Controlling flow at intersections
+                    </div>
+                    <div class="complexity-metric">
+                        <strong>Event Handling:</strong> Processing events in the order they occur
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        class QueueVisualization {
+            constructor() {
+                this.queue = [];
+                this.maxSize = 15;
+                this.animationSpeed = 500;
+                this.isAnimating = false;
+                
+                // DOM elements
+                this.queueVisEl = document.getElementById('queueVis');
+                this.queueSizeEl = document.getElementById('queueSize');
+                this.queueEmptyEl = document.getElementById('queueEmpty');
+                this.frontPointerEl = document.getElementById('frontPointer');
+                this.rearPointerEl = document.getElementById('rearPointer');
+                this.operationsLogEl = document.getElementById('operationsLog');
+                
+                // Buttons
+                document.getElementById('enqueueBtn').addEventListener('click', () => this.enqueue());
+                document.getElementById('dequeueBtn').addEventListener('click', () => this.dequeue());
+                document.getElementById('peekBtn').addEventListener('click', () => this.peek());
+                document.getElementById('clearBtn').addEventListener('click', () => this.clear());
+                
+                // Input field
+                this.inputEl = document.getElementById('queueInput');
+                this.inputEl.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') this.enqueue();
+                });
+                
+                // Initialize
+                this.updateVisualization();
+                this.logOperation('Queue initialized');
+            }
+            
+            async enqueue() {
+                if (this.isAnimating) return;
+                if (this.queue.length >= this.maxSize) {
+                    this.logOperation('⚠️ Queue is full! Cannot enqueue more items.');
+                    return;
+                }
+                
+                const value = this.inputEl.value.trim();
+                if (!value) {
+                    this.logOperation('⚠️ Please enter a value to enqueue');
+                    return;
+                }
+                
+                this.isAnimating = true;
+                this.queue.push(value);
+                this.inputEl.value = '';
+                
+                // Create new element
+                const itemEl = document.createElement('div');
+                itemEl.className = 'queue-item highlighted';
+                itemEl.textContent = value;
+                itemEl.style.opacity = '0';
+                itemEl.style.transform = 'scale(0.5)';
+                this.queueVisEl.appendChild(itemEl);
+                
+                // Animate entry
+                await this.sleep(50);
+                itemEl.style.opacity = '1';
+                itemEl.style.transform = 'scale(1)';
+                
+                await this.sleep(this.animationSpeed);
+                itemEl.classList.remove('highlighted');
+                
+                this.updateVisualization();
+                this.logOperation(`Enqueued: ${value}`);
+                this.isAnimating = false;
+            }
+            
+            async dequeue() {
+                if (this.isAnimating) return;
+                if (this.queue.length === 0) {
+                    this.logOperation('⚠️ Queue is empty! Cannot dequeue.');
+                    return;
+                }
+                
+                this.isAnimating = true;
+                const value = this.queue.shift();
+                
+                // Get the front element and animate
+                const items = this.queueVisEl.querySelectorAll('.queue-item');
+                const frontItem = items[0];
+                frontItem.classList.add('highlighted');
+                
+                await this.sleep(this.animationSpeed / 2);
+                
+                frontItem.style.opacity = '0';
+                frontItem.style.transform = 'translateY(-50px) scale(0.5)';
+                
+                await this.sleep(this.animationSpeed);
+                
+                frontItem.remove();
+                this.updateVisualization();
+                this.logOperation(`Dequeued: ${value}`);
+                this.isAnimating = false;
+            }
+            
+            async peek() {
+                if (this.isAnimating) return;
+                if (this.queue.length === 0) {
+                    this.logOperation('⚠️ Queue is empty! Nothing to peek.');
+                    return;
+                }
+                
+                this.isAnimating = true;
+                const value = this.queue[0];
+                
+                // Get the front element and animate
+                const items = this.queueVisEl.querySelectorAll('.queue-item');
+                const frontItem = items[0];
+                frontItem.classList.add('highlighted');
+                
+                await this.sleep(this.animationSpeed);
+                
+                frontItem.classList.remove('highlighted');
+                this.logOperation(`Peeked front: ${value}`);
+                this.isAnimating = false;
+            }
+            
+            async clear() {
+                if (this.isAnimating) return;
+                if (this.queue.length === 0) {
+                    this.logOperation('Queue is already empty.');
+                    return;
+                }
+                
+                this.isAnimating = true;
+                this.queue = [];
+                
+                // Animate all items disappearing
+                const items = this.queueVisEl.querySelectorAll('.queue-item');
+                for (let i = 0; i < items.length; i++) {
+                    items[i].classList.add('highlighted');
+                    await this.sleep(100);
+                    items[i].style.opacity = '0';
+                    items[i].style.transform = 'scale(0.5)';
+                }
+                
+                await this.sleep(this.animationSpeed);
+                
+                this.queueVisEl.innerHTML = '';
+                this.updateVisualization();
+                this.logOperation('Queue cleared');
+                this.isAnimating = false;
+            }
+            
+            updateVisualization() {
+                // Update stats
+                this.queueSizeEl.textContent = `Size: ${this.queue.length}`;
+                this.queueEmptyEl.textContent = `Empty: ${this.queue.length === 0 ? 'Yes' : 'No'}`;
+                
+                // Update pointers
+                this.frontPointerEl.textContent = `Front: ${this.queue.length > 0 ? this.queue[0] : 'None'}`;
+                this.rearPointerEl.textContent = `Rear: ${this.queue.length > 0 ? this.queue[this.queue.length - 1] : 'None'}`;
+            }
+            
+            logOperation(message) {
+                const logItem = document.createElement('div');
+                logItem.className = 'list-item';
+                
+                const timestamp = new Date().toLocaleTimeString();
+                logItem.innerHTML = `<strong>${timestamp}</strong>: ${message}`;
+                
+                this.operationsLogEl.prepend(logItem);
+                
+                // Limit log size
+                if (this.operationsLogEl.children.length > 20) {
+                    this.operationsLogEl.removeChild(this.operationsLogEl.lastChild);
+                }
+            }
+            
+            sleep(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+        }
+        
+        // Initialize the visualization when the page loads
+        window.addEventListener('load', () => {
+            new QueueVisualization();
+        });
+    </script>
+</body>
+</html>
