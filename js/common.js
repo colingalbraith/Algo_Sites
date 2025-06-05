@@ -312,7 +312,10 @@ function createNavBar(currentPage) {
         { name: 'Linked List', url: 'pages/linked-list.html' },
         { name: 'DFS & BFS', url: 'pages/graph-traversal.html' },
         { name: 'Shortest Path', url: 'pages/shortest-path.html' },
-        { name: 'Network Flow', url: 'pages/network-flow.html' }
+        { name: 'Network Flow', url: 'pages/network-flow.html' },
+        { name: 'Knapsack', url: 'pages/dp-knapsack.html' },
+        { name: 'Painting Houses', url: 'pages/painting-houses.html' },
+        { name: 'Counting Stairs', url: 'pages/counting-stairs.html' }
     ];
 
     let pages = JSON.parse(JSON.stringify(siteRootPages)); // Use 'pages' as the variable for the rest of the function
