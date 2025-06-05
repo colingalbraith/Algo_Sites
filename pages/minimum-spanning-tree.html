@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimum Spanning Tree</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <script src="../js/common.js"></script>
+</head>
+<body>
+    <div class="container" id="app">
+        <script>
+            const navBar = createNavBar('MST');
+            document.getElementById('app').appendChild(navBar);
+            const breadcrumbs = createBreadcrumbs([
+                { name: 'Home', url: '../index.html' },
+                { name: 'Minimum Spanning Tree' }
+            ]);
+            document.getElementById('app').appendChild(breadcrumbs);
+        </script>
+        <div class="header">
+            <h1>🌉 Minimum Spanning Tree</h1>
+            <p>Visualize Prim's and Kruskal's algorithms and see how the cycle and cut lemmas justify them.</p>
+        </div>
+        <div class="content-wrapper">
+            <div class="controls">
+                <h2>Controls</h2>
+                <div class="control-group">
+                    <button id="mst-generate-graph">Generate Random Graph</button>
+                    <button id="mst-clear-graph">Clear Graph</button>
+                </div>
+                <div class="control-group">
+                    <input type="text" id="mst-add-node" placeholder="Node (e.g., A)">
+                    <button id="mst-add-node-btn">Add Node</button>
+                </div>
+                <div class="control-group">
+                    <input type="text" id="mst-edge-from" placeholder="From">
+                    <input type="text" id="mst-edge-to" placeholder="To">
+                    <input type="number" id="mst-edge-weight" placeholder="Weight" style="width:100px;">
+                    <button id="mst-add-edge">Add Edge</button>
+                </div>
+                <hr>
+                <div class="control-group">
+                    <label for="mst-start-node">Start Node (Prim):</label>
+                    <input type="text" id="mst-start-node" placeholder="Enter start">
+                </div>
+                <div class="control-group">
+                    <button id="run-prim">Run Prim's</button>
+                    <button id="run-kruskal">Run Kruskal's</button>
+                </div>
+                <div class="animation-controls">
+                    <button id="play-pause-animation">Play</button>
+                    <button id="step-animation">Step</button>
+                    <label for="animation-speed">Speed:</label>
+                    <input type="range" id="animation-speed" min="1" max="10" value="5">
+                </div>
+            </div>
+            <div class="visualization-area-container">
+                <h2>MST Visualization</h2>
+                <div id="mst-graph-area" class="visualization-area graph-viz"></div>
+            </div>
+        </div>
+        <div class="panels">
+            <div class="info-panel operations-log">
+                <h3>Operations Log</h3>
+                <ul id="mst-operations"></ul>
+            </div>
+            <div class="info-panel code-snippet">
+                <h3>Code Snippet</h3>
+                <select id="mst-code-select">
+                    <option value="prim">Prim's Algorithm</option>
+                    <option value="kruskal">Kruskal's Algorithm</option>
+                </select>
+                <pre><code id="mst-code-display" class="language-javascript">// Select an algorithm to see code</code></pre>
+            </div>
+        </div>
+        <div class="panels">
+            <div class="info-panel complexity-panel">
+                <script>
+                    const mstComplexity = {
+                        prim_binary_heap: { algorithm: "Prim (Adj. List + Binary Heap)", time_worst: 'O(E log V)', space_worst: 'O(V + E)' },
+                        kruskal: { algorithm: "Kruskal", time_worst: 'O(E log V)', space_worst: 'O(V + E)' }
+                    };
+                    document.currentScript.parentElement.appendChild(createComplexityPanel(mstComplexity, 'Minimum Spanning Tree'));
+                </script>
+            </div>
+            <div class="info-panel applications-panel">
+                <h3>Applications</h3>
+                <ul>
+                    <li>Network design.</li>
+                    <li>Clustering in machine learning.</li>
+                    <li>Approximation algorithms.</li>
+                </ul>
+            </div>
+            <div class="info-panel theory-panel">
+                <h3>Cycle &amp; Cut Lemma</h3>
+                <p>The <strong>cut lemma</strong> states that the lightest edge crossing any cut is part of some MST. The <strong>cycle lemma</strong> says the heaviest edge on any cycle cannot belong to an MST. These lemmas justify the greedy steps of Prim's and Kruskal's algorithms.</p>
+            </div>
+        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', () => {
+                const animationController = new AnimationController(
+                    document.getElementById('play-pause-animation'),
+                    document.getElementById('step-animation'),
+                    document.getElementById('animation-speed')
+                );
+                const logList = document.getElementById('mst-operations');
+                function log(msg) {
+                    const li = document.createElement('li');
+                    li.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+                    logList.insertBefore(li, logList.firstChild);
+                    if (logList.children.length > 20) logList.removeChild(logList.lastChild);
+                }
+
+                const codeSnippets = {
+                    prim: `function prim(graph, start) {\n  const visited = new Set([start]);\n  const edges = [];\n  for (const e of graph[start]) edges.push({from:start,to:e.neighbor,w:e.weight});\n  const mst = [];\n  while (edges.length && visited.size < Object.keys(graph).length) {\n    edges.sort((a,b)=>a.w-b.w);\n    const e = edges.shift();\n    if (visited.has(e.from) && visited.has(e.to)) continue;\n    const newNode = visited.has(e.from) ? e.to : e.from;\n    visited.add(newNode);\n    mst.push(e);\n    for (const ne of graph[newNode]) if (!visited.has(ne.neighbor))\n      edges.push({from:newNode,to:ne.neighbor,w:ne.weight});\n  }\n  return mst;\n}`,
+                    kruskal: `function kruskal(nodes, edges) {\n  edges.sort((a,b)=>a.weight-b.weight);\n  const parent = {};\n  nodes.forEach(n=>parent[n]=n);\n  const find=x=>parent[x]==x?x:parent[x]=find(parent[x]);\n  const mst=[];\n  for (const e of edges) {\n    if (find(e.u)!=find(e.v)) {\n      parent[find(e.u)] = find(e.v);\n      mst.push(e);\n    }\n  }\n  return mst;\n}`
+                };
+                const codeSelect = document.getElementById('mst-code-select');
+                const codeDisplay = document.getElementById('mst-code-display');
+                codeSelect.addEventListener('change', e => {
+                    codeDisplay.textContent = codeSnippets[e.target.value];
+                    if (typeof hljs !== 'undefined') hljs.highlightElement(codeDisplay);
+                });
+                codeDisplay.textContent = codeSnippets[codeSelect.value];
+                if (typeof hljs !== 'undefined') hljs.highlightElement(codeDisplay);
+
+                const graphArea = document.getElementById('mst-graph-area');
+                class MSTVisualization {
+                    constructor() {
+                        this.nodeMap = new Map();
+                        this.edgeMap = new Map(); // key -> {from,to,weight,domElem,weightElem}
+                        this.adj = {};
+                        this.nodeRadius = 20;
+                    }
+                    addNode(id,x,y){
+                        if(this.nodeMap.has(id)) { log(`Node ${id} exists.`); return; }
+                        const el=document.createElement('div');
+                        el.className='graph-node';
+                        el.textContent=id;
+                        el.dataset.id=id;
+                        const width=graphArea.clientWidth;
+                        const height=graphArea.clientHeight;
+                        const posX=x||Math.random()*(width-80)+40;
+                        const posY=y||Math.random()*(height-80)+40;
+                        el.style.left=`${posX-this.nodeRadius}px`;
+                        el.style.top=`${posY-this.nodeRadius}px`;
+                        graphArea.appendChild(el);
+                        this.nodeMap.set(id,{id,x:posX,y:posY,el});
+                        this.adj[id]=this.adj[id]||[];
+                        log(`Node ${id} added.`);
+                    }
+                    edgeKey(a,b){ return [a,b].sort().join('-'); }
+                    addEdge(u,v,w){
+                        if(!this.nodeMap.has(u)||!this.nodeMap.has(v)){ log('Nodes must exist.'); return; }
+                        const key=this.edgeKey(u,v);
+                        if(this.edgeMap.has(key)) { log(`Edge ${u}-${v} exists.`); return; }
+                        const line=document.createElement('div');
+                        line.className='graph-edge';
+                        const from=this.nodeMap.get(u); const to=this.nodeMap.get(v);
+                        graphArea.appendChild(line);
+                        this.updateEdgeElement(line,from,to);
+                        const weightEl=document.createElement('div');
+                        weightEl.className='edge-weight';
+                        weightEl.textContent=w;
+                        graphArea.appendChild(weightEl);
+                        this.updateWeightElementPosition(weightEl,from,to);
+                        this.edgeMap.set(key,{from:u,to:v,weight:w,dom:line,weightEl});
+                        this.adj[u].push({neighbor:v,weight:w});
+                        this.adj[v].push({neighbor:u,weight:w});
+                        log(`Edge ${u}-${v} (${w}) added.`);
+                    }
+                    updateEdgeElement(edge,from,to){
+                        const dx=to.x-from.x; const dy=to.y-from.y;
+                        const len=Math.sqrt(dx*dx+dy*dy);
+                        const angle=Math.atan2(dy,dx)*180/Math.PI;
+                        edge.style.width=`${len}px`;
+                        edge.style.left=`${from.x}px`;
+                        edge.style.top=`${from.y-edge.offsetHeight/2}px`;
+                        edge.style.transform=`rotate(${angle}deg)`;
+                    }
+                    updateWeightElementPosition(el,from,to){
+                        const mx=(from.x+to.x)/2; const my=(from.y+to.y)/2;
+                        el.style.left=`${mx}px`; el.style.top=`${my}px`;
+                    }
+                    clearGraph(){
+                        this.nodeMap.forEach(n=>n.el.remove());
+                        this.edgeMap.forEach(e=>{e.dom.remove(); e.weightEl.remove();});
+                        this.nodeMap.clear(); this.edgeMap.clear(); this.adj={};
+                        log('Graph cleared.');
+                    }
+                    generateRandomGraph(n=5,e=7){
+                        this.clearGraph();
+                        const ids=[]; for(let i=0;i<n;i++){const id=String.fromCharCode(65+i); ids.push(id); this.addNode(id);} 
+                        for(let i=0;i<e;i++){let u=ids[Math.floor(Math.random()*n)]; let v=ids[Math.floor(Math.random()*n)]; if(u===v){i--;continue;} const key=this.edgeKey(u,v); if(this.edgeMap.has(key)){i--;continue;} const w=Math.floor(Math.random()*9)+1; this.addEdge(u,v,w);} 
+                        log(`Random graph generated (${n} nodes).`);
+                    }
+                    resetStyles(){
+                        this.nodeMap.forEach(n=>n.el.className='graph-node');
+                        this.edgeMap.forEach(ed=>{ed.dom.className='graph-edge';});
+                    }
+                    async highlightNode(id,cls,dur=animationController.getDelay()){
+                        const n=this.nodeMap.get(id); if(!n) return; n.el.classList.add(cls); await animationController.delay(dur); if(cls!=='visited') n.el.classList.remove(cls);
+                    }
+                    async highlightEdge(u,v,cls,dur=animationController.getDelay()){
+                        const e=this.edgeMap.get(this.edgeKey(u,v)); if(!e) return; e.dom.classList.add(cls); await animationController.delay(dur); if(cls!=='path') e.dom.classList.remove(cls);
+                    }
+                    async prim(start){
+                        if(!this.nodeMap.has(start)){ log(`Start node ${start} missing.`); return; }
+                        this.resetStyles();
+                        const visited=new Set([start]);
+                        await this.highlightNode(start,'visited');
+                        let edges=[];
+                        for(const e of this.adj[start]) edges.push({from:start,to:e.neighbor,weight:e.weight});
+                        while(edges.length && visited.size<this.nodeMap.size){
+                            await animationController.checkPlayPause();
+                            edges.sort((a,b)=>a.weight-b.weight);
+                            const e=edges.shift();
+                            const {from,to,weight}=e;
+                            if(visited.has(from) && visited.has(to)) continue;
+                            const newNode=visited.has(from)?to:from;
+                            await this.highlightEdge(from,to,'highlight');
+                            this.edgeMap.get(this.edgeKey(from,to)).dom.classList.add('path');
+                            visited.add(newNode);
+                            await this.highlightNode(newNode,'visited');
+                            for(const ne of this.adj[newNode]) if(!visited.has(ne.neighbor)) edges.push({from:newNode,to:ne.neighbor,weight:ne.weight});
+                        }
+                        log("Prim's algorithm finished.");
+                    }
+                    async kruskal(){
+                        this.resetStyles();
+                        const edges=[];
+                        this.edgeMap.forEach((e,key)=>{edges.push({from:e.from,to:e.to,weight:e.weight});});
+                        edges.sort((a,b)=>a.weight-b.weight);
+                        const parent={};
+                        this.nodeMap.forEach((_,id)=>parent[id]=id);
+                        const find=x=>parent[x]===x?x:parent[x]=find(parent[x]);
+                        const union=(a,b)=>{parent[find(a)]=find(b);};
+                        for(const e of edges){
+                            await animationController.checkPlayPause();
+                            await this.highlightEdge(e.from,e.to,'highlight');
+                            if(find(e.from)!==find(e.to)){
+                                union(e.from,e.to);
+                                this.edgeMap.get(this.edgeKey(e.from,e.to)).dom.classList.add('path');
+                            }
+                        }
+                        log("Kruskal's algorithm finished.");
+                    }
+                }
+
+                const viz = new MSTVisualization();
+                document.getElementById('mst-generate-graph').addEventListener('click',()=>viz.generateRandomGraph());
+                document.getElementById('mst-clear-graph').addEventListener('click',()=>viz.clearGraph());
+                document.getElementById('mst-add-node-btn').addEventListener('click',()=>{const id=document.getElementById('mst-add-node').value.trim().toUpperCase(); if(id){viz.addNode(id); document.getElementById('mst-add-node').value='';}});
+                document.getElementById('mst-add-edge').addEventListener('click',()=>{
+                    const u=document.getElementById('mst-edge-from').value.trim().toUpperCase();
+                    const v=document.getElementById('mst-edge-to').value.trim().toUpperCase();
+                    const w=parseInt(document.getElementById('mst-edge-weight').value.trim());
+                    if(u&&v&&!isNaN(w)) { viz.addEdge(u,v,w); document.getElementById('mst-edge-from').value=''; document.getElementById('mst-edge-to').value=''; document.getElementById('mst-edge-weight').value=''; }
+                });
+                document.getElementById('run-prim').addEventListener('click',()=>{const s=document.getElementById('mst-start-node').value.trim().toUpperCase(); if(s) viz.prim(s);});
+                document.getElementById('run-kruskal').addEventListener('click',()=>viz.kruskal());
+                viz.generateRandomGraph(5,7);
+                log('MST visualization initialized.');
+            });
+        </script>
+    </div>
+</body>
+</html>

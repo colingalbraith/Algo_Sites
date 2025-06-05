@@ -778,3 +778,50 @@ input[type="range"]::-webkit-slider-thumb {
         width: 100%;
     }
 }
+
+/* Generic Graph Visualization Styles */
+.graph-viz {
+    position: relative;
+    background: #f8f9fa;
+    border-radius: 10px;
+    min-height: 400px;
+}
+
+.graph-node {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #667eea;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.graph-node.visited {
+    background: #44a08d;
+}
+
+.graph-edge {
+    position: absolute;
+    height: 4px;
+    background: #555;
+    transform-origin: 0 50%;
+}
+
+.graph-edge.path {
+    background: #ff6b6b;
+}
+
+.edge-weight {
+    position: absolute;
+    padding: 2px 4px;
+    background: white;
+    border-radius: 4px;
+    font-size: 12px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
