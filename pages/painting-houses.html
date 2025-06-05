@@ -27,6 +27,7 @@
                 <button id="ph-start">Run Demo</button>
                 <button id="ph-reset">Reset</button>
             </div>
+            <div class="control-group" id="ph-anim-controls"></div>
         </div>
         <div class="visualization-area">
             <div class="matrix-container">
@@ -94,6 +95,9 @@
                     cell.classList.add('highlight-access');
                     setTimeout(()=>cell.classList.remove('highlight-access'), controller.animationSpeed);
                 });
+
+            document.getElementById('ph-anim-controls')
+                .appendChild(createAnimationControls(controller));
 
             document.getElementById('ph-start').addEventListener('click', () => controller.play());
             document.getElementById('ph-reset').addEventListener('click', () => {

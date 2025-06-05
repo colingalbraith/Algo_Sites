@@ -23,7 +23,7 @@
             <p>Visualize common linked list operations like insertion, deletion, and traversal.</p>
         </div>
                 <div class="content-wrapper">
-            <div class="controls">
+            <div class="controls linked-list-controls">
                 <h2>Controls</h2>
                 <div class="control-group">
                     <input type="text" id="list-value" placeholder="Enter value">
@@ -627,9 +627,14 @@
                     });
                 }
 
-                // Initial render
-                list.render();
-                logOperation('Linked list visualization initialized.');
+                // Seed with default values
+                (async () => {
+                    await list.insertTail('A');
+                    await list.insertTail('B');
+                    await list.insertTail('C');
+                    list.render();
+                    logOperation('Linked list visualization initialized with sample data.');
+                })();
             });
         </script>
 

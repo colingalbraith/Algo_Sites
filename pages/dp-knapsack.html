@@ -27,6 +27,7 @@
                 <button id="knap-start">Run Demo</button>
                 <button id="knap-reset">Reset</button>
             </div>
+            <div class="control-group" id="knap-anim-controls"></div>
         </div>
         <div class="visualization-area">
             <div class="matrix-container">
@@ -90,6 +91,9 @@
                     cell.classList.add('highlight-access');
                     setTimeout(()=>cell.classList.remove('highlight-access'), controller.animationSpeed);
                 });
+
+            document.getElementById('knap-anim-controls')
+                .appendChild(createAnimationControls(controller));
 
             document.getElementById('knap-start').addEventListener('click', () => controller.play());
             document.getElementById('knap-reset').addEventListener('click', () => {
