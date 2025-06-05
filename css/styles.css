@@ -574,6 +574,15 @@ input[type="range"]::-webkit-slider-thumb {
     background: #5568c4;
 }
 
+.linked-list-controls .control-group {
+    margin-bottom: 10px;
+}
+
+.linked-list-controls input[type="text"],
+.linked-list-controls input[type="number"] {
+    width: 120px;
+}
+
 .ll-node-container {
     display: flex;
     align-items: center; /* Align node and arrow horizontally */
@@ -804,4 +813,57 @@ input[type="range"]::-webkit-slider-thumb {
 .mst-edge.selected {
     color: #44a08d;
     font-weight: bold;
+}
+
+/* Graph Visualization */
+.graph-viz {
+    position: relative;
+    background: #ffffff;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    height: 400px;
+    overflow: hidden;
+}
+
+.graph-node {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #667eea;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    cursor: pointer;
+    user-select: none;
+}
+
+.graph-edge {
+    position: absolute;
+    height: 2px;
+    background: #333;
+    transform-origin: 0 50%;
+}
+
+.graph-edge.directed::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+    border: solid #333;
+    border-width: 0 2px 2px 0;
+    padding: 4px;
+}
+
+.edge-weight {
+    position: absolute;
+    background: #f8f9fa;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    border: 1px solid #ccc;
+    transform: translate(-50%, -50%);
 }

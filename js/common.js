@@ -15,6 +15,8 @@ class AnimationController {
             this.speedInput = speedInput;
         }
 
+        this.animationSpeed = this.baseDelay;
+
         this._paused = false;
         this.currentStep = 0;
         this.animationSteps = [];
@@ -46,6 +48,7 @@ class AnimationController {
         this._speed = speed;
         // Higher speed -> shorter delay
         this.baseDelay = 1100 - speed * 100;
+        this.animationSpeed = this.baseDelay;
         return this;
     }
 

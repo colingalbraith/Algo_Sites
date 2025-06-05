@@ -27,6 +27,7 @@
                 <button id="cs-start">Run Demo</button>
                 <button id="cs-reset">Reset</button>
             </div>
+            <div class="control-group" id="cs-anim-controls"></div>
         </div>
         <div class="visualization-area">
             <div class="matrix-container">
@@ -91,6 +92,9 @@
                     }
                     setTimeout(()=>cell.classList.remove('highlight-access'), controller.animationSpeed);
                 });
+
+            document.getElementById('cs-anim-controls')
+                .appendChild(createAnimationControls(controller));
 
             document.getElementById('cs-start').addEventListener('click', () => controller.play());
             document.getElementById('cs-reset').addEventListener('click', () => {
