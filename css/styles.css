@@ -778,3 +778,30 @@ input[type="range"]::-webkit-slider-thumb {
         width: 100%;
     }
 }
+
+/* Greedy visualizations */
+.interval-bar {
+    position: relative;
+    background: #f8f9fa;
+    border: 2px solid #6c757d;
+    border-radius: 5px;
+    height: 30px;
+    margin: 5px 0;
+}
+
+.interval-bar span {
+    position: absolute;
+    left: 5px;
+    top: 5px;
+    font-size: 0.9em;
+}
+
+.interval-selected {
+    background: linear-gradient(135deg, #4ecdc4, #44a08d);
+    color: white;
+}
+
+.mst-edge.selected {
+    color: #44a08d;
+    font-weight: bold;
+}

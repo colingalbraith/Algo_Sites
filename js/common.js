@@ -313,6 +313,7 @@ function createNavBar(currentPage) {
         { name: 'DFS & BFS', url: 'pages/graph-traversal.html' },
         { name: 'Shortest Path', url: 'pages/shortest-path.html' },
         { name: 'Network Flow', url: 'pages/network-flow.html' },
+        { name: 'Greedy', url: 'pages/greedy.html' },
         { name: 'Knapsack', url: 'pages/dp-knapsack.html' },
         { name: 'Painting Houses', url: 'pages/painting-houses.html' },
         { name: 'Counting Stairs', url: 'pages/counting-stairs.html' }
