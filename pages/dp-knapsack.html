@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>0/1 Knapsack Visualization</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <script src="../js/common.js"></script>
+</head>
+<body>
+    <div class="container" id="app">
+        <script>
+            const navBar = createNavBar('0/1 Knapsack');
+            document.getElementById('app').appendChild(navBar);
+            const breadcrumbs = createBreadcrumbs([
+                { name: 'Home', url: '../index.html' },
+                { name: '0/1 Knapsack' }
+            ]);
+            document.getElementById('app').appendChild(breadcrumbs);
+        </script>
+        <div class="header">
+            <h1>🎒 0/1 Knapsack</h1>
+            <p>Step through the dynamic programming table for the classic 0/1 knapsack problem.</p>
+        </div>
+        <div class="controls">
+            <div class="control-group">
+                <button id="knap-start">Run Demo</button>
+                <button id="knap-reset">Reset</button>
+            </div>
+        </div>
+        <div class="visualization-area">
+            <div class="matrix-container">
+                <h3>DP Table</h3>
+                <div id="knap-table" class="matrix"></div>
+            </div>
+        </div>
+        <div class="panels">
+            <div class="info-panel complexity-panel">
+                <script>
+                    const knapsackComplexity = {
+                        time: { worst: 'O(n * W)' },
+                        space: { worst: 'O(n * W)' },
+                        applications: ['Resource allocation', 'Budget management']
+                    };
+                    document.currentScript.parentElement.appendChild(createComplexityPanel(knapsackComplexity));
+                </script>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const weights = [2,3,4,5];
+            const values = [3,4,5,6];
+            const capacity = 8;
+            const n = weights.length;
+            const table = document.getElementById('knap-table');
+            table.style.gridTemplateColumns = `repeat(${capacity + 1}, 40px)`;
+
+            function render(dp) {
+                let html = '';
+                for (let i = 0; i <= n; i++) {
+                    for (let w = 0; w <= capacity; w++) {
+                        html += `<div class="matrix-cell" id="cell-${i}-${w}">${dp[i][w] ?? ''}</div>`;
+                    }
+                }
+                table.innerHTML = html;
+            }
+
+            const dp = Array.from({length:n+1},()=>Array(capacity+1).fill(''));
+            render(dp);
+
+            const steps = [];
+            for (let i = 1; i <= n; i++) {
+                for (let w = 1; w <= capacity; w++) {
+                    let value = dp[i-1][w];
+                    if (weights[i-1] <= w) {
+                        const include = (dp[i-1][w - weights[i-1]] || 0) + values[i-1];
+                        value = Math.max(value || 0, include);
+                    }
+                    steps.push({i,w,value});
+                    dp[i][w] = value;
+                }
+            }
+
+            const controller = new AnimationController(800)
+                .setAnimationSteps(steps)
+                .setOnStepChange((idx, step) => {
+                    const cell = document.getElementById(`cell-${step.i}-${step.w}`);
+                    cell.textContent = step.value;
+                    cell.classList.add('highlight-access');
+                    setTimeout(()=>cell.classList.remove('highlight-access'), controller.animationSpeed);
+                });
+
+            document.getElementById('knap-start').addEventListener('click', () => controller.play());
+            document.getElementById('knap-reset').addEventListener('click', () => {
+                controller.pause();
+                controller.reset();
+                for (let i = 0; i <= n; i++) for (let w = 0; w <= capacity; w++) {
+                    document.getElementById(`cell-${i}-${w}`).textContent = '';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

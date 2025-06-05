@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Counting Stairs DP</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <script src="../js/common.js"></script>
+</head>
+<body>
+    <div class="container" id="app">
+        <script>
+            const navBar = createNavBar('Counting Stairs');
+            document.getElementById('app').appendChild(navBar);
+            const breadcrumbs = createBreadcrumbs([
+                { name: 'Home', url: '../index.html' },
+                { name: 'Counting Stairs' }
+            ]);
+            document.getElementById('app').appendChild(breadcrumbs);
+        </script>
+        <div class="header">
+            <h1>🪜 Counting Stairs</h1>
+            <p>Visualize the Fibonacci-style dynamic programming approach to count ways to climb stairs.</p>
+        </div>
+        <div class="controls">
+            <div class="control-group">
+                <button id="cs-start">Run Demo</button>
+                <button id="cs-reset">Reset</button>
+            </div>
+        </div>
+        <div class="visualization-area">
+            <div class="matrix-container">
+                <h3>DP Array</h3>
+                <div id="cs-table" class="matrix"></div>
+            </div>
+        </div>
+        <div class="panels">
+            <div class="info-panel complexity-panel">
+                <script>
+                    const csComplexity = {
+                        time: { worst: 'O(n)' },
+                        space: { worst: 'O(n)' },
+                        applications: ['Combinatorial counting', 'Dynamic sequences']
+                    };
+                    document.currentScript.parentElement.appendChild(createComplexityPanel(csComplexity));
+                </script>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const n = 6;
+            const table = document.getElementById('cs-table');
+            table.style.gridTemplateColumns = `repeat(${n+1}, 50px)`;
+
+            function render(dp) {
+                let html = '';
+                for (let i = 0; i <= n; i++) {
+                    html += `<div class="matrix-cell" id="cs-${i}">${dp[i] ?? ''}</div>`;
+                }
+                table.innerHTML = html;
+            }
+
+            const dp = Array(n+1).fill('');
+            render(dp);
+            const steps = [];
+            dp[0] = 1; dp[1] = 1;
+            steps.push({i:0,value:1});
+            steps.push({i:1,value:1});
+            for (let i = 2; i <= n; i++) {
+                const value = dp[i-1] + dp[i-2];
+                steps.push({i,value,prev1:i-1,prev2:i-2});
+                dp[i] = value;
+            }
+
+            const controller = new AnimationController(700)
+                .setAnimationSteps(steps)
+                .setOnStepChange((idx, step) => {
+                    const cell = document.getElementById(`cs-${step.i}`);
+                    cell.textContent = step.value;
+                    cell.classList.add('highlight-access');
+                    if (step.prev1 !== undefined) {
+                        const p1 = document.getElementById(`cs-${step.prev1}`);
+                        const p2 = document.getElementById(`cs-${step.prev2}`);
+                        p1.classList.add('highlight-search');
+                        p2.classList.add('highlight-search');
+                        setTimeout(() => {
+                            p1.classList.remove('highlight-search');
+                            p2.classList.remove('highlight-search');
+                        }, controller.animationSpeed);
+                    }
+                    setTimeout(()=>cell.classList.remove('highlight-access'), controller.animationSpeed);
+                });
+
+            document.getElementById('cs-start').addEventListener('click', () => controller.play());
+            document.getElementById('cs-reset').addEventListener('click', () => {
+                controller.pause();
+                controller.reset();
+                for (let i = 0; i <= n; i++) {
+                    document.getElementById(`cs-${i}`).textContent = '';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
