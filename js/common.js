@@ -3,12 +3,28 @@
  */
 
 class AnimationController {
-    constructor(animationSpeed = 1000) {
-        this.animationSpeed = animationSpeed;
-        this.isPlaying = false;
+    constructor(playPauseBtn = null, stepBtn = null, speedInput = null) {
+        // Backwards compatible parameter: if a single number is provided treat
+        // it as initial delay (ms)
+        if (typeof playPauseBtn === 'number') {
+            this.baseDelay = playPauseBtn;
+        } else {
+            this.baseDelay = 1000;
+            this.playPauseBtn = playPauseBtn;
+            this.stepBtn = stepBtn;
+            this.speedInput = speedInput;
+        }
+
+        this._paused = false;
         this.currentStep = 0;
         this.animationSteps = [];
         this.onStepChange = null;
+
+        if (this.speedInput) {
+            this.setSpeed(parseInt(this.speedInput.value));
+        } else {
+            this.setSpeed(5); // default
+        }
     }
 
     setAnimationSteps(steps) {
@@ -22,8 +38,14 @@ class AnimationController {
         return this;
     }
 
-    setSpeed(speedMs) {
-        this.animationSpeed = speedMs;
+    setSpeed(speed) {
+        // Speed is typically from 1 (slow) to 10 (fast)
+        if (typeof speed !== 'number' || isNaN(speed)) {
+            speed = 5;
+        }
+        this._speed = speed;
+        // Higher speed -> shorter delay
+        this.baseDelay = 1100 - speed * 100;
         return this;
     }
 
@@ -74,6 +96,30 @@ class AnimationController {
                 this.onStepChange(this.currentStep, this.animationSteps[this.currentStep]);
             }
         }
+    }
+
+    togglePause() {
+        this._paused = !this._paused;
+        return this._paused;
+    }
+
+    isPaused() {
+        return this._paused;
+    }
+
+    async checkPlayPause() {
+        while (this._paused) {
+            await this.sleep(50);
+        }
+    }
+
+    getDelay() {
+        return this.baseDelay;
+    }
+
+    async delay(ms = this.getDelay()) {
+        await this.checkPlayPause();
+        await this.sleep(ms);
     }
 
     sleep(ms) {
