@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Greedy Algorithms & Proof Techniques</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <script src="../js/common.js"></script>
+    <style>
+        .interval-bar {
+            position: relative;
+            height: 30px;
+            background: #f8f9fa;
+            border: 2px solid #6c757d;
+            border-radius: 5px;
+            margin: 5px 0;
+        }
+        .interval-bar span {
+            position: absolute;
+            left: 5px;
+            top: 5px;
+            font-size: 0.9em;
+        }
+        .interval-selected {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+            color: white;
+        }
+        .mst-edge {
+            margin: 2px 0;
+        }
+        .mst-edge.selected {
+            color: #44a08d;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container" id="app">
+        <script>
+            const navBar = createNavBar('Greedy');
+            document.getElementById('app').appendChild(navBar);
+            const breadcrumbs = createBreadcrumbs([
+                { name: 'Home', url: '../index.html' },
+                { name: 'Greedy Algorithms' }
+            ]);
+            document.getElementById('app').appendChild(breadcrumbs);
+        </script>
+        <div class="header">
+            <h1>⚡ Greedy Algorithms & Proof Techniques</h1>
+            <p>Visual demonstrations of staying ahead and exchange arguments.</p>
+        </div>
+        <div class="content-wrapper">
+            <h2>Interval Scheduling (Staying Ahead)</h2>
+            <div class="controls">
+                <div class="control-group">
+                    <input type="number" id="int-start" placeholder="Start">
+                    <input type="number" id="int-end" placeholder="End">
+                    <button id="add-interval">Add Interval</button>
+                    <button id="run-interval">Run Greedy</button>
+                </div>
+            </div>
+            <div id="interval-container"></div>
+            <p id="interval-output"></p>
+            <h2 style="margin-top:40px;">Kruskal's MST (Exchange Argument)</h2>
+            <div class="controls">
+                <div class="control-group">
+                    <button id="run-mst">Run Kruskal on Sample Graph</button>
+                </div>
+            </div>
+            <div id="mst-edges"></div>
+            <p id="mst-output"></p>
+        </div>
+    </div>
+    <script>
+        // Interval Scheduling
+        const intervals = [];
+        const intContainer = document.getElementById('interval-container');
+        document.getElementById('add-interval').addEventListener('click', () => {
+            const s = parseInt(document.getElementById('int-start').value);
+            const e = parseInt(document.getElementById('int-end').value);
+            if (isNaN(s) || isNaN(e) || e <= s) return;
+            const bar = document.createElement('div');
+            bar.className = 'interval-bar';
+            bar.style.width = (e - s) * 40 + 'px';
+            bar.style.marginLeft = s * 40 + 'px';
+            const label = document.createElement('span');
+            label.textContent = `[${s},${e}]`;
+            bar.appendChild(label);
+            intContainer.appendChild(bar);
+            intervals.push({start:s,end:e,element:bar});
+        });
+        document.getElementById('run-interval').addEventListener('click', async () => {
+            intervals.forEach(i=>i.element.classList.remove('interval-selected'));
+            const sorted = intervals.slice().sort((a,b)=>a.end-b.end);
+            let lastEnd = -Infinity;
+            const selected = [];
+            for(const interval of sorted){
+                if(interval.start >= lastEnd){
+                    interval.element.classList.add('interval-selected');
+                    selected.push(`[${interval.start},${interval.end}]`);
+                    lastEnd = interval.end;
+                    await new Promise(r=>setTimeout(r,300));
+                }
+            }
+            document.getElementById('interval-output').textContent = 'Selected: ' + selected.join(' ');
+        });
+
+        // MST with sample graph
+        const sampleEdges = [
+            {u:'A',v:'B',w:1},
+            {u:'A',v:'C',w:3},
+            {u:'B',v:'C',w:2},
+            {u:'B',v:'D',w:4},
+            {u:'C',v:'D',w:5}
+        ];
+        const mstEdgesDiv = document.getElementById('mst-edges');
+        sampleEdges.forEach(e=>{
+            const div=document.createElement('div');
+            div.textContent=`${e.u} - ${e.v} (w=${e.w})`;
+            div.className='mst-edge';
+            e.element=div;
+            mstEdgesDiv.appendChild(div);
+        });
+        document.getElementById('run-mst').addEventListener('click', async () => {
+            sampleEdges.forEach(e=>e.element.classList.remove('selected'));
+            // Kruskal on sampleEdges
+            const parent={};
+            function find(x){ if(parent[x]===x) return x; parent[x]=find(parent[x]); return parent[x]; }
+            function union(x,y){ parent[find(x)]=find(y); }
+            ['A','B','C','D'].forEach(n=>parent[n]=n);
+            const sorted=sampleEdges.slice().sort((a,b)=>a.w-b.w);
+            const chosen=[];
+            for(const edge of sorted){
+                if(find(edge.u)!=find(edge.v)){
+                    union(edge.u,edge.v);
+                    edge.element.classList.add('selected');
+                    chosen.push(`${edge.u}-${edge.v}`);
+                    await new Promise(r=>setTimeout(r,300));
+                }
+            }
+            document.getElementById('mst-output').textContent='MST edges: '+chosen.join(', ');
+        });
+    </script>
+</body>
+</html>

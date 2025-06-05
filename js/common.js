@@ -267,6 +267,7 @@ function createNavBar(currentPage) {
         { name: 'DFS & BFS', url: 'pages/graph-traversal.html' },
         { name: 'Shortest Path', url: 'pages/shortest-path.html' },
         { name: 'Network Flow', url: 'pages/network-flow.html' }
+        ,{ name: 'Greedy', url: 'pages/greedy.html' }
     ];
 
     let pages = JSON.parse(JSON.stringify(siteRootPages)); // Use 'pages' as the variable for the rest of the function
